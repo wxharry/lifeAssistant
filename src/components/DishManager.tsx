@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { Dish, Ingredient } from '../types';
 
 export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?: (id: string) => void, style?: React.CSSProperties }) {
@@ -44,14 +43,17 @@ interface DraggableDishProps {
 }
 
 function DraggableDish({ dish, onDelete }: DraggableDishProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dish.id,
     data: { dish }
   });
 
-  const style = transform ? {
-    transform: CSS.Translate.toString(transform),
-  } : undefined;
+  const style: React.CSSProperties = {
+    // No transform so list item stays put; just style feedback
+    opacity: isDragging ? 0.7 : 1,
+    outline: isDragging ? '2px solid var(--color-primary)' : undefined,
+    cursor: 'grab'
+  };
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>

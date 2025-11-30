@@ -1,5 +1,4 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { format, addDays } from 'date-fns';
 import { Minus, Plus, X } from 'lucide-react';
 import { MEAL_TYPES, ScheduleItem, Dish, MealType } from '../types';
@@ -15,7 +14,7 @@ interface ScheduledDishProps {
 }
 
 function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpdateServings }: ScheduledDishProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `scheduled-${day}-${mealType}-${idx}`,
     data: {
       dish,
@@ -28,9 +27,11 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
   });
 
   const style: React.CSSProperties = {
-    transform: transform ? CSS.Translate.toString(transform) : undefined,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab'
+    // Intentionally omit transform so element does not follow cursor
+    opacity: isDragging ? 0.7 : 1,
+    cursor: 'grab',
+    //outline: isDragging ? '2px solid var(--color-primary)' : undefined,
+    background: isDragging ? 'var(--color-surface-alt)' : undefined
   };
 
   return (
@@ -39,7 +40,7 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
       style={style}
       {...listeners}
       {...attributes}
-      className="dish-item group flex flex-col gap-1"
+      className={`dish-item group flex flex-col gap-1 ${isDragging ? 'dragging' : ''}`}
     >
       <div className="flex justify-between items-center">
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>{dish.name}</span>
