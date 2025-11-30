@@ -128,38 +128,62 @@ function App() {
     const { active, over } = event;
     setActiveDish(null);
 
-    if (over && active.data.current && over.data.current) {
-      // Dropped on a calendar slot
-      const dish = active.data.current.dish as Dish;
-      const { day, mealType } = over.data.current;
-      
-      // Find existing slot or create new one
-      const existingSlotIndex = schedule.findIndex(s => s.date === day && s.mealType === mealType);
-      
-      if (existingSlotIndex >= 0) {
-        const newSchedule = [...schedule];
-        // Check if dish already exists in slot, if so maybe increment servings? 
-        // For now, let's just add another entry or increment if exact same dish.
-        // Let's add as new entry for flexibility (e.g. different serving notes if we had them), 
-        // but typically users might just want to increase servings. 
-        // Let's check if it exists.
-        const existingItemIndex = newSchedule[existingSlotIndex].items.findIndex(i => i.dishId === dish.id);
-        if (existingItemIndex >= 0) {
-           newSchedule[existingSlotIndex].items[existingItemIndex].servings += 1;
-        } else {
-           newSchedule[existingSlotIndex].items.push({ dishId: dish.id, servings: 1 });
+    if (!over || !active.data.current || !over.data.current) return;
+
+    const data: any = active.data.current; // broaden typing for dynamic dnd-kit data payload
+    const dish = data.dish as Dish;
+    const { day, mealType } = over.data.current as any;
+    const isRescheduling = !!data.isRescheduling;
+    const servings = data.servings || 1;
+
+    setSchedule(prev => {
+      let working = [...prev];
+
+      if (isRescheduling) {
+        const { sourceDay, sourceMealType, sourceIndex } = data;
+        if (sourceDay === day && sourceMealType === mealType) {
+          return working; // dropped on same slot, no change
         }
-        setSchedule(newSchedule);
+        const srcIdx = working.findIndex(s => s.date === sourceDay && s.mealType === sourceMealType);
+        if (srcIdx >= 0) {
+          const srcSlot = { ...working[srcIdx] };
+            const newItems = [...srcSlot.items];
+            newItems.splice(sourceIndex, 1);
+            srcSlot.items = newItems;
+            if (srcSlot.items.length === 0) {
+              working.splice(srcIdx, 1); // remove empty slot
+            } else {
+              working[srcIdx] = srcSlot;
+            }
+        }
+      }
+
+      // Destination slot logic
+      const destIdx = working.findIndex(s => s.date === day && s.mealType === mealType);
+      if (destIdx >= 0) {
+        const destSlot = { ...working[destIdx] };
+        const existingItemIndex = destSlot.items.findIndex(i => i.dishId === dish.id);
+        if (existingItemIndex >= 0 && !isRescheduling) {
+          // adding from menu duplicates -> increment servings
+          destSlot.items[existingItemIndex] = {
+            ...destSlot.items[existingItemIndex],
+            servings: destSlot.items[existingItemIndex].servings + 1
+          };
+        } else {
+          destSlot.items = [...destSlot.items, { dishId: dish.id, servings }];
+        }
+        working[destIdx] = destSlot;
       } else {
-        const newSlot: ScheduleItem = {
+        working.push({
           id: uuidv4(),
           date: day,
           mealType: mealType as any,
-          items: [{ dishId: dish.id, servings: 1 }]
-        };
-        setSchedule([...schedule, newSlot]);
+          items: [{ dishId: dish.id, servings }]
+        });
       }
-    }
+
+      return working;
+    });
   };
 
   return (
@@ -171,7 +195,6 @@ function App() {
               <SchedulePage 
                 schedule={schedule} 
                 dishes={dishes} 
-                onUpdateSchedule={setSchedule}
                 onRemoveFromSchedule={handleRemoveFromSchedule}
                 onUpdateServings={handleUpdateServings}
               />

@@ -1,7 +1,91 @@
-import { useDroppable } from '@dnd-kit/core';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { format, addDays } from 'date-fns';
 import { Minus, Plus, X } from 'lucide-react';
 import { MEAL_TYPES, ScheduleItem, Dish, MealType } from '../types';
+
+interface ScheduledDishProps {
+  dish: Dish;
+  servings: number;
+  idx: number;
+  day: string;
+  mealType: MealType;
+  onRemoveDish: (day: string, mealType: MealType, dishIndex: number) => void;
+  onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => void;
+}
+
+function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpdateServings }: ScheduledDishProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `scheduled-${day}-${mealType}-${idx}`,
+    data: {
+      dish,
+      servings,
+      sourceDay: day,
+      sourceMealType: mealType,
+      sourceIndex: idx,
+      isRescheduling: true
+    }
+  });
+
+  const style: React.CSSProperties = {
+    transform: transform ? CSS.Translate.toString(transform) : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab'
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="dish-item group flex flex-col gap-1"
+    >
+      <div className="flex justify-between items-center">
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>{dish.name}</span>
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveDish(day, mealType, idx);
+          }}
+          style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0.25rem' }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-danger"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <div className="flex items-center justify-between" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
+        <span>Servings:</span>
+        <div className="flex items-center gap-1 bg-gray-100 rounded px-1">
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpdateServings(day, mealType, dish.id, -1);
+            }}
+            className="hover:text-primary p-0.5"
+            disabled={servings <= 1}
+            style={{ opacity: servings <= 1 ? 0.3 : 1, cursor: servings <= 1 ? 'default' : 'pointer' }}
+          >
+            <Minus size={10} />
+          </button>
+          <span style={{ minWidth: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--color-text-main)' }}>{servings}</span>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpdateServings(day, mealType, dish.id, 1);
+            }}
+            className="hover:text-primary p-0.5"
+          >
+            <Plus size={10} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface MealSlotProps {
   day: string; // YYYY-MM-DD
@@ -18,46 +102,20 @@ function MealSlot({ day, mealType, items, onRemoveDish, onUpdateServings }: Meal
   });
 
   return (
-    <div 
-      ref={setNodeRef} 
-      className={`meal-slot ${isOver ? 'over' : ''}`}
-    >
+    <div ref={setNodeRef} className={`meal-slot ${isOver ? 'over' : ''}`}>
       <div className="meal-slot-label">{mealType}</div>
       <div className="flex flex-col gap-1">
         {items.map(({ dish, servings }, idx) => (
-          <div key={`${dish.id}-${idx}`} className="dish-item group flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>{dish.name}</span>
-              <button 
-                onClick={() => onRemoveDish(day, mealType, idx)}
-                style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0.25rem' }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-danger"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            
-            <div className="flex items-center justify-between" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
-              <span>Servings:</span>
-              <div className="flex items-center gap-1 bg-gray-100 rounded px-1">
-                <button 
-                  onClick={() => onUpdateServings(day, mealType, dish.id, -1)}
-                  className="hover:text-primary p-0.5"
-                  disabled={servings <= 1}
-                  style={{ opacity: servings <= 1 ? 0.3 : 1, cursor: servings <= 1 ? 'default' : 'pointer' }}
-                >
-                  <Minus size={10} />
-                </button>
-                <span style={{ minWidth: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--color-text-main)' }}>{servings}</span>
-                <button 
-                  onClick={() => onUpdateServings(day, mealType, dish.id, 1)}
-                  className="hover:text-primary p-0.5"
-                >
-                  <Plus size={10} />
-                </button>
-              </div>
-            </div>
-          </div>
+          <ScheduledDish
+            key={`${dish.id}-${idx}`}
+            dish={dish}
+            servings={servings}
+            idx={idx}
+            day={day}
+            mealType={mealType}
+            onRemoveDish={onRemoveDish}
+            onUpdateServings={onUpdateServings}
+          />
         ))}
       </div>
     </div>
