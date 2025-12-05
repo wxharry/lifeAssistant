@@ -91,9 +91,16 @@ export default function MenuPage({ dishes, onAddDish, onUpdateDish, onDeleteDish
               style={{ cursor: 'pointer', position: 'relative' }}
             >
               <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>{dish.name}</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {dish.source || 'No source provided'}
-              </p>
+              {dish.servings && dish.servings > 0 && (
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                  Makes {dish.servings} serving{dish.servings !== 1 ? 's' : ''}
+                </p>
+              )}
+              {dish.videoLink && (
+              <a style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {dish.videoLink}
+              </a>
+              )}
               <div style={{ 
                 display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                 fontSize: '0.75rem', color: 'var(--color-text-muted)',

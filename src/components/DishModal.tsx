@@ -18,7 +18,8 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
     name: '',
     seasonings: [],
     videoLink: '',
-    ingredients: []
+    ingredients: [],
+    servings: dish?.servings || 1
   });
   const [ingredientInput, setIngredientInput] = useState<Omit<Ingredient, 'id'>>({ name: '', amount: '', unit: '' });
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
@@ -32,10 +33,11 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
           name: dish.name,
           seasonings: dish.seasonings || [],
           videoLink: dish.videoLink || '',
-          ingredients: dish.ingredients
+          ingredients: dish.ingredients,
+          servings: dish.servings || 1
         });
       } else {
-        setFormData({ name: '', seasonings: [], videoLink: '', ingredients: [] });
+        setFormData({ name: '', seasonings: [], videoLink: '', ingredients: [], servings: 1 });
       }
       setIngredientInput({ name: '', amount: '', unit: '' });
       setEditingIngredientId(null);
@@ -125,6 +127,14 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
         <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
           {mode === 'view' ? (
             <div className="flex flex-col gap-4">
+              {dish?.servings && dish.servings > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>Makes</span>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                    {dish.servings} serving{dish.servings !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
               {dish?.seasonings && dish.seasonings.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>Seasonings</span>
@@ -194,6 +204,17 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
                 />
               </div>
               
+              <div className="flex flex-col gap-1">
+                <label style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Servings (this recipe makes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.servings || 1}
+                  onChange={e => setFormData({...formData, servings: parseInt(e.target.value) || 1})}
+                  placeholder="1"
+                />
+              </div>
+
               <div className="flex flex-col gap-1">
                 <label style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Seasonings</label>
                 <div className="flex gap-2">

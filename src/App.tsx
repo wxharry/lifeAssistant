@@ -13,6 +13,7 @@ const INITIAL_DISHES: Dish[] = [
   { 
     id: '1', 
     name: 'Pancakes', 
+    servings: 1,
     seasonings: ['Salt', 'Sugar', 'Vanilla Extract'],
     ingredients: [
       { id: 'i1', name: 'Flour', amount: '2', unit: 'cups' },
@@ -23,6 +24,7 @@ const INITIAL_DISHES: Dish[] = [
   { 
     id: '2', 
     name: 'Spaghetti Bolognese', 
+    servings: 1,
     seasonings: ['Salt', 'Pepper', 'Oregano', 'Basil'],
     ingredients: [
       { id: 'i4', name: 'Spaghetti', amount: '500', unit: 'g' },
@@ -33,6 +35,7 @@ const INITIAL_DISHES: Dish[] = [
   { 
     id: '3', 
     name: 'Caesar Salad', 
+    servings: 1,
     seasonings: ['Salt', 'Pepper'],
     ingredients: [
       { id: 'i7', name: 'Romaine Lettuce', amount: '1', unit: 'head' },
@@ -45,7 +48,12 @@ const INITIAL_DISHES: Dish[] = [
 function App() {
   const [dishes, setDishes] = useState<Dish[]>(() => {
     const saved = localStorage.getItem('dishes');
-    return saved ? JSON.parse(saved) : INITIAL_DISHES;
+    const parsed = saved ? JSON.parse(saved) : INITIAL_DISHES;
+    // Ensure all dishes have servings defaulted to 1
+    return parsed.map((dish: Dish) => ({
+      ...dish,
+      servings: dish.servings ?? 1
+    }));
   });
 
   const [schedule, setSchedule] = useState<ScheduleItem[]>(() => {

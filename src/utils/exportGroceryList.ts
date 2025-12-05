@@ -45,8 +45,10 @@ export function exportGroceryList(
             };
           }
           const val = typeof ing.amount === 'string' ? parseFloat(ing.amount) : ing.amount;
+          const dishServings = dish.servings || 1; // Default to 1 if not set
           if (!isNaN(val)) {
-            items[key].amount += val * item.servings;
+            // Multiply ingredient by (scheduled servings / dish servings)
+            items[key].amount += (val * item.servings) / dishServings;
           }
           // Track which dishes use this ingredient and servings
           if (!items[key].dishes[dish.name]) {

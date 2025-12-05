@@ -10,7 +10,14 @@ export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?:
       className="dish-item group"
     >
       <div className="flex justify-between items-start">
-        <h3 style={{ fontWeight: '500' }}>{dish.name}</h3>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontWeight: '500' }}>{dish.name}</h3>
+          {dish.servings && dish.servings > 0 && (
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginTop: '0.125rem' }}>
+              Makes {dish.servings} serving{dish.servings !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
         {onDelete && (
           <button 
             onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
@@ -75,7 +82,8 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
     name: '',
     seasonings: [],
     videoLink: '',
-    ingredients: []
+    ingredients: [],
+    servings: 1
   });
   const [ingredientInput, setIngredientInput] = useState<Omit<Ingredient, 'id'>>({ name: '', amount: '', unit: '' });
   const [seasoningInput, setSeasoningInput] = useState('');
@@ -101,8 +109,8 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDish.name) return;
-    onAddDish({ ...newDish, id: uuidv4() });
-    setNewDish({ name: '', seasonings: [], videoLink: '', ingredients: [] });
+    onAddDish({ ...newDish, id: uuidv4(), servings: newDish.servings || 1 });
+    setNewDish({ name: '', seasonings: [], videoLink: '', ingredients: [], servings: 1 });
     setIsAdding(false);
   };
 
@@ -152,6 +160,18 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
             value={newDish.videoLink}
             onChange={e => setNewDish({...newDish, videoLink: e.target.value})}
           />
+
+          <div className="flex flex-col gap-1">
+            <label style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Servings (this recipe makes)</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="1"
+              value={newDish.servings || 1}
+              onChange={e => setNewDish({...newDish, servings: parseInt(e.target.value) || 1})}
+              style={{ fontSize: '0.75rem' }}
+            />
+          </div>
           
           <div className="flex flex-col gap-2">
             <p style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Ingredients</p>

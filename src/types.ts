@@ -11,6 +11,7 @@ export interface Dish {
   ingredients: Ingredient[];
   seasonings?: string[];
   videoLink?: string;
+  servings?: number; // Number of servings this dish makes (ingredient base)
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'others';
