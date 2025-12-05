@@ -42,7 +42,7 @@ export default function Layout() {
         </div>
       </header>
       
-      <main className="container" style={{ flex: 1 }}>
+      <main style={{ flex: 1, width: '100%', padding: 0 }}>
         <Outlet />
       </main>
     </div>

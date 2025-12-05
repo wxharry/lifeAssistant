@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
-import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
-import DishManager from '../components/DishManager';
+import { DishListItem } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import DateRangeModal from '../components/DateRangeModal';
 
@@ -18,10 +18,16 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Calendar State
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
   const endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
+
+  const filteredDishes = dishes.filter(d => 
+    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.ingredients.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
@@ -54,14 +60,36 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         </div>
         
         {isSidebarOpen && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
-            <div className="flex flex-col gap-2">
-              <DishManager 
-                 dishes={dishes} 
-                 onAddDish={() => {}} 
-                 onDeleteDish={() => {}} 
-                 hideAddButton={true}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column'}}>
+            <div className="relative">
+              <Search className="absolute" size={16} style={{ left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+              <input 
+                type="text"
+                placeholder="Search dishes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ 
+                  paddingLeft: '32px',
+                  width: '100%',
+                  fontSize: '0.875rem'
+                }}
               />
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {filteredDishes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                  No dishes found
+                </div>
+              ) : (
+                filteredDishes.map(dish => (
+                  <div key={dish.id} style={{ cursor: 'grab' }}>
+                    <DishListItem 
+                      dish={dish}
+                      style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                    />
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -77,7 +105,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
 
       {/* Main Calendar */}
       <div className="calendar-container">
-        <div className="flex justify-between items-center" style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)', background: 'rgba(248, 249, 250, 0.5)' }}>
+        <div className="flex justify-between items-center" style={{ padding: '0.5rem', borderBottom: '1px solid var(--color-border)', background: 'rgba(248, 249, 250, 0.5)' }}>
           <div className="flex items-center gap-4">
             <div className="flex items-center" style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
               <button onClick={handlePrevWeek} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><ChevronLeft size={18} /></button>

@@ -32,12 +32,12 @@ export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?:
       </div>
       {dish.seasonings && dish.seasonings.length > 0 && (
         <p style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.25rem', fontSize: '0.75rem' }}>
-          Seasonings: {dish.seasonings.join(', ')}
+          {dish.seasonings.join(', ')}
         </p>
       )}
       {dish.ingredients.length > 0 && (
-        <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-          {dish.ingredients.length} ingredients
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+          {dish.ingredients.map(ingredient => ingredient.name).join(', ')}
         </p>
       )}
     </div>
