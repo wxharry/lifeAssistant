@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { X } from 'lucide-react';
 
 interface DateRangeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (startDate: Date, endDate: Date) => void;
+  onExport: (startDate: Date, endDate: Date, exportFormat: 'txt' | 'json', listName?: string) => void;
   initialStartDate: Date;
   initialEndDate: Date;
 }
@@ -13,12 +13,26 @@ interface DateRangeModalProps {
 export default function DateRangeModal({ isOpen, onClose, onExport, initialStartDate, initialEndDate }: DateRangeModalProps) {
   const [startDate, setStartDate] = useState(format(initialStartDate, 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(initialEndDate, 'yyyy-MM-dd'));
+  const [exportFormat, setExportFormat] = useState<'txt' | 'json'>('txt');
+  const [listName, setListName] = useState(() => {
+    return localStorage.getItem('groceryListName') || '';
+  });
+
+  useEffect(() => {
+    if (listName) {
+      localStorage.setItem('groceryListName', listName);
+    }
+  }, [listName]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onExport(new Date(startDate), new Date(endDate));
+    if (exportFormat === 'json' && !listName.trim()) {
+      alert('List name is required for JSON export');
+      return;
+    }
+    onExport(new Date(startDate), new Date(endDate), exportFormat, listName);
     onClose();
   };
 
@@ -52,6 +66,32 @@ export default function DateRangeModal({ isOpen, onClose, onExport, initialStart
               required
             />
           </div>
+
+          <div className="flex flex-col gap-1">
+            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Export Format</label>
+            <select
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as 'txt' | 'json')}
+              style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+            >
+              <option value="txt">Text (.txt)</option>
+              <option value="json">JSON (.json)</option>
+            </select>
+          </div>
+
+          {exportFormat === 'json' && (
+            <div className="flex flex-col gap-1">
+              <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>List Name *</label>
+              <input
+                type="text"
+                placeholder="e.g., Weekly Groceries"
+                value={listName}
+                onChange={(e) => setListName(e.target.value)}
+                required={exportFormat === 'json'}
+                style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+              />
+            </div>
+          )}
 
           <div className="flex gap-3" style={{ marginTop: '1rem' }}>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Export</button>

@@ -30,8 +30,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
     setIsExportModalOpen(true);
   };
 
-  const handleExportConfirm = (start: Date, end: Date) => {
-    exportGroceryList(schedule, dishes, start, end);
+  const handleExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
+    exportGroceryList(schedule, dishes, start, end, format, listName);
   };
 
   const handleRemoveFromScheduleInternal = (day: string, mealType: MealType, dishIndex: number) => {
