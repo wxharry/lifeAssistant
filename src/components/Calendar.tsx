@@ -56,29 +56,50 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
           <X size={14} />
         </button>
       </div>
-      <div className="flex items-center justify-between" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
-        <span>Servings:</span>
-        <div className="flex items-center gap-1 bg-gray-100 rounded px-1">
+      <div className="flex items-center justify-between gap-1" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
+        <span style={{ whiteSpace: 'nowrap' }}>Servings:</span>
+        <div className="flex items-center gap-0.5 bg-gray-100 rounded px-0.5" style={{ flexShrink: 0 }}>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onUpdateServings(day, mealType, dish.id, -1);
             }}
-            className="hover:text-primary p-0.5"
+            className="hover:text-primary"
             disabled={servings <= 1}
-            style={{ opacity: servings <= 1 ? 0.3 : 1, cursor: servings <= 1 ? 'default' : 'pointer' }}
+            style={{ 
+              opacity: servings <= 1 ? 0.3 : 1, 
+              cursor: servings <= 1 ? 'default' : 'pointer',
+              padding: '0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1
+            }}
           >
             <Minus size={10} />
           </button>
-          <span style={{ minWidth: '12px', textAlign: 'center', fontWeight: '600', color: 'var(--color-text-main)' }}>{servings}</span>
+          <span style={{ 
+            minWidth: '14px', 
+            textAlign: 'center', 
+            fontWeight: '600', 
+            color: 'var(--color-text-main)',
+            lineHeight: 1
+          }}>{servings}</span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onUpdateServings(day, mealType, dish.id, 1);
             }}
-            className="hover:text-primary p-0.5"
+            className="hover:text-primary"
+            style={{ 
+              padding: '0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1
+            }}
           >
             <Plus size={10} />
           </button>
