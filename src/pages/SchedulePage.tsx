@@ -5,7 +5,8 @@ import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
 import { DraggableDish } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
-import DateRangeModal from '../components/DateRangeModal';
+import { exportScheduledDishes } from '../utils/exportScheduledDishes';
+import ExportModal from '../components/ExportModal';
 
 interface SchedulePageProps {
   schedule: ScheduleItem[];
@@ -17,7 +18,8 @@ interface SchedulePageProps {
 export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isGroceryExportOpen, setIsGroceryExportOpen] = useState(false);
+  const [isScheduleExportOpen, setIsScheduleExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Calendar State
@@ -32,12 +34,20 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
   const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
 
-  const handleExportClick = () => {
-    setIsExportModalOpen(true);
+  const handleGroceryExportClick = () => {
+    setIsGroceryExportOpen(true);
   };
 
-  const handleExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
+  const handleScheduleExportClick = () => {
+    setIsScheduleExportOpen(true);
+  };
+
+  const handleGroceryExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
     exportGroceryList(schedule, dishes, start, end, format, listName);
+  };
+
+  const handleScheduleExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
+    exportScheduledDishes(schedule, dishes, start, end, format, listName);
   };
 
   const handleRemoveFromScheduleInternal = (day: string, mealType: MealType, dishIndex: number) => {
@@ -111,13 +121,22 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
             </div>
           </div>
           
-          <button 
-            onClick={handleExportClick}
-            className="btn btn-primary"
-          >
-            <Download size={16} style={{ marginRight: '0.5rem' }} />
-            Export Grocery List
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleGroceryExportClick}
+              className="btn btn-primary"
+            >
+              <Download size={16} style={{ marginRight: '0.5rem' }} />
+              Export Groceries
+            </button>
+            <button 
+              onClick={handleScheduleExportClick}
+              className="btn btn-primary"
+            >
+              <Download size={16} style={{ marginRight: '0.5rem' }} />
+              Export Schedule
+            </button>
+          </div>
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', padding: '1rem' }}>
@@ -131,12 +150,24 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         </div>
       </div>
 
-      <DateRangeModal 
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        onExport={handleExportConfirm}
+      <ExportModal 
+        isOpen={isGroceryExportOpen}
+        onClose={() => setIsGroceryExportOpen(false)}
+        onExport={handleGroceryExportConfirm}
         initialStartDate={startDate}
         initialEndDate={endDate}
+        title="Export Grocery List"
+        storageKey="groceryListName"
+      />
+
+      <ExportModal 
+        isOpen={isScheduleExportOpen}
+        onClose={() => setIsScheduleExportOpen(false)}
+        onExport={handleScheduleExportConfirm}
+        initialStartDate={startDate}
+        initialEndDate={endDate}
+        title="Export Scheduled Dishes"
+        storageKey="scheduledDishesListName"
       />
     </div>
   );
