@@ -46,10 +46,10 @@ export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?:
 
 interface DraggableDishProps {
   dish: Dish;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-function DraggableDish({ dish, onDelete }: DraggableDishProps) {
+export function DraggableDish({ dish, onDelete }: DraggableDishProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dish.id,
     data: { dish }

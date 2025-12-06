@@ -3,7 +3,7 @@ import { format, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
 import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
-import { DishListItem } from '../components/DishManager';
+import { DraggableDish } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import DateRangeModal from '../components/DateRangeModal';
 
@@ -82,12 +82,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
                 </div>
               ) : (
                 filteredDishes.map(dish => (
-                  <div key={dish.id} style={{ cursor: 'grab' }}>
-                    <DishListItem 
-                      dish={dish}
-                      style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
-                    />
-                  </div>
+                  <DraggableDish key={dish.id} dish={dish} />
                 ))
               )}
             </div>
