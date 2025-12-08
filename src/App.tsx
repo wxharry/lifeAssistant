@@ -6,7 +6,7 @@ import Layout from './components/Layout';
 import MenuPage from './pages/MenuPage';
 import SchedulePage from './pages/SchedulePage';
 import { DishListItem } from './components/DishManager';
-import { Dish, ScheduleItem } from './types';
+import { Dish, ScheduleItem, MealType } from './types';
 
 // Initial Data (Mock)
 const INITIAL_DISHES: Dish[] = [
@@ -126,6 +126,35 @@ function App() {
 
   const [activeDish, setActiveDish] = useState<Dish | null>(null);
 
+  const handleChangeMealType = (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => {
+    if (fromMealType === toMealType) return;
+    setSchedule(prev => {
+      const working = [...prev];
+      const fromIdx = working.findIndex(s => s.date === day && s.mealType === fromMealType);
+      if (fromIdx === -1) return prev;
+
+      const fromSlot = { ...working[fromIdx], items: [...working[fromIdx].items] };
+      const itemIdx = fromSlot.items.findIndex(i => i.dishId === dishId);
+      if (itemIdx === -1) return prev;
+
+      const [item] = fromSlot.items.splice(itemIdx, 1);
+      if (fromSlot.items.length === 0) {
+        working.splice(fromIdx, 1);
+      } else {
+        working[fromIdx] = fromSlot;
+      }
+
+      const destIdx = working.findIndex(s => s.date === day && s.mealType === toMealType);
+      if (destIdx >= 0) {
+        working[destIdx] = { ...working[destIdx], items: [...working[destIdx].items, item] };
+      } else {
+        working.push({ id: uuidv4(), date: day, mealType: toMealType, items: [item] });
+      }
+
+      return working;
+    });
+  };
+
   const handleDragStart = (event: any) => {
     if (event.active.data.current?.dish) {
       setActiveDish(event.active.data.current.dish);
@@ -140,7 +169,9 @@ function App() {
 
     const data: any = active.data.current; // broaden typing for dynamic dnd-kit data payload
     const dish = data.dish as Dish;
-    const { day, mealType } = over.data.current as any;
+    const { day } = over.data.current as any;
+    if (!day) return;
+    const mealType = (over.data.current as any).mealType ?? 'others';
     const isRescheduling = !!data.isRescheduling;
     const servings = data.servings || 1;
 
@@ -205,6 +236,7 @@ function App() {
                 dishes={dishes} 
                 onRemoveFromSchedule={handleRemoveFromSchedule}
                 onUpdateServings={handleUpdateServings}
+                onChangeMealType={handleChangeMealType}
               />
             } />
             <Route path="menu" element={

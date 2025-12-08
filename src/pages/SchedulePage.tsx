@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
@@ -13,26 +13,32 @@ interface SchedulePageProps {
   dishes: Dish[];
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => void;
+  onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => void;
 }
 
-export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings }: SchedulePageProps) {
+export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isGroceryExportOpen, setIsGroceryExportOpen] = useState(false);
   const [isScheduleExportOpen, setIsScheduleExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Calendar State
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
-  const endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const startDate = viewMode === 'week'
+    ? startOfWeek(currentDate, { weekStartsOn: 1 })
+    : startOfMonth(currentDate);
+  const endDate = viewMode === 'week'
+    ? endOfWeek(currentDate, { weekStartsOn: 1 })
+    : endOfMonth(currentDate);
 
   const filteredDishes = dishes.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.ingredients.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
-  const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
+  const handlePrev = () => setCurrentDate(viewMode === 'week' ? subWeeks(currentDate, 1) : subMonths(currentDate, 1));
+  const handleNext = () => setCurrentDate(viewMode === 'week' ? addWeeks(currentDate, 1) : addMonths(currentDate, 1));
 
   const handleGroceryExportClick = () => {
     setIsGroceryExportOpen(true);
@@ -113,12 +119,28 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         <div className="flex justify-between items-center" style={{ padding: '0.5rem', borderBottom: '1px solid var(--color-border)', background: 'rgba(248, 249, 250, 0.5)' }}>
           <div className="flex items-center gap-4">
             <div className="flex items-center" style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-              <button onClick={handlePrevWeek} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><ChevronLeft size={18} /></button>
+              <button onClick={handlePrev} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><ChevronLeft size={18} /></button>
               <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '500', minWidth: '200px', textAlign: 'center', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
-                {format(startDate, 'MMM d')} - {format(endDate, 'MMM d, yyyy')}
+                {viewMode === 'week' ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}` : format(startDate, 'MMMM yyyy')}
               </span>
-              <button onClick={handleNextWeek} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: '0 var(--radius-md) var(--radius-md) 0' }}><ChevronRight size={18} /></button>
+              <button onClick={handleNext} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: '0 var(--radius-md) var(--radius-md) 0' }}><ChevronRight size={18} /></button>
             </div>
+          </div>
+          <div className="flex gap-2 viewmode-toggle" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.125rem' }}>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`btn btn-ghost viewmode-btn${viewMode === 'week' ? ' selected' : ''}`}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: viewMode === 'week' ? 'bold' : 'normal', color: viewMode === 'week' ? 'var(--color-primary)' : 'var(--color-text-main)', boxShadow: viewMode === 'week' ? '0 0 0 2px var(--color-primary-light)' : 'none', background: viewMode === 'week' ? 'var(--color-primary-light)' : 'var(--color-surface)' }}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode('month')}
+              className={`btn btn-ghost viewmode-btn${viewMode === 'month' ? ' selected' : ''}`}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: viewMode === 'month' ? 'bold' : 'normal', color: viewMode === 'month' ? 'var(--color-primary)' : 'var(--color-text-main)', boxShadow: viewMode === 'month' ? '0 0 0 2px var(--color-primary-light)' : 'none', background: viewMode === 'month' ? 'var(--color-primary-light)' : 'var(--color-surface)' }}
+            >
+              Month
+            </button>
           </div>
           
           <div className="flex gap-2">
@@ -145,7 +167,9 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
              dishes={dishes} 
              onRemoveFromSchedule={handleRemoveFromScheduleInternal}
              onUpdateServings={onUpdateServings}
+             onChangeMealType={onChangeMealType}
              startDate={startDate}
+             viewMode={viewMode}
            />
         </div>
       </div>
