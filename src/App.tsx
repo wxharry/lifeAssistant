@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DndContext, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { v4 as uuidv4 } from 'uuid';
 import Layout from './components/Layout';
 import MenuPage from './pages/MenuPage';
 import SchedulePage from './pages/SchedulePage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import { DishListItem } from './components/DishManager';
 import { Dish, ScheduleItem, MealType } from './types';
+import { SupabaseProvider, useSupabaseAuth } from './contexts/SupabaseContext';
+import { useDishes, useSchedule } from './hooks/useSupabaseData';
+import { BackupData } from './utils/exportBackup';
+import { useState } from 'react';
 
-// Initial Data (Mock)
+// Initial Data (Mock) - kept for fallback/demo purposes
 const INITIAL_DISHES: Dish[] = [
   { 
     id: '1', 
@@ -45,114 +51,200 @@ const INITIAL_DISHES: Dish[] = [
   }
 ];
 
-function App() {
-  const [dishes, setDishes] = useState<Dish[]>(() => {
-    const saved = localStorage.getItem('dishes');
-    const parsed = saved ? JSON.parse(saved) : INITIAL_DISHES;
-    // Ensure all dishes have servings defaulted to 1
-    return parsed.map((dish: Dish) => ({
-      ...dish,
-      servings: dish.servings ?? 1
-    }));
-  });
+function AppContent() {
+  const { user, loading } = useSupabaseAuth();
+  const { dishes, addDish, updateDish, deleteDish } = useDishes(user?.id);
+  const { schedule, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem } = useSchedule(user?.id);
+  const [activeDish, setActiveDish] = useState<Dish | null>(null);
 
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(() => {
-    const saved = localStorage.getItem('schedule');
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: 'var(--color-bg)'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  const handleAddDish = async (dish: Dish) => {
     try {
-      const parsed = saved ? JSON.parse(saved) : [];
-      // Simple check to see if it's the old format (has dishIds)
-      if (parsed.length > 0 && parsed[0].dishIds) {
-        return []; // Reset if old format
-      }
-      return parsed;
-    } catch (e) {
-      return [];
+      await addDish(dish);
+    } catch (error) {
+      alert('Failed to add dish: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('dishes', JSON.stringify(dishes));
-  }, [dishes]);
-
-  useEffect(() => {
-    localStorage.setItem('schedule', JSON.stringify(schedule));
-  }, [schedule]);
-
-  const handleAddDish = (dish: Dish) => {
-    setDishes([...dishes, dish]);
   };
 
-  const handleUpdateDish = (updatedDish: Dish) => {
-    setDishes(dishes.map(d => d.id === updatedDish.id ? updatedDish : d));
+  const handleUpdateDish = async (updatedDish: Dish) => {
+    try {
+      await updateDish(updatedDish);
+    } catch (error) {
+      alert('Failed to update dish: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
-  const handleDeleteDish = (id: string) => {
-    setDishes(dishes.filter(d => d.id !== id));
-    // Also remove from schedule
-    setSchedule(schedule.map(slot => ({
-      ...slot,
-      items: slot.items.filter(item => item.dishId !== id)
-    })));
+  const handleDeleteDish = async (id: string) => {
+    try {
+      await deleteDish(id);
+      // Remove from schedule as well
+      const itemsToDelete = schedule.flatMap(slot => 
+        slot.items.filter(item => item.dishId === id).map(item => slot.id)
+      );
+      for (const scheduleId of itemsToDelete) {
+        const scheduleItem = schedule.find(s => s.id === scheduleId);
+        if (scheduleItem) {
+          await deleteScheduleItem(scheduleItem.id);
+        }
+      }
+    } catch (error) {
+      alert('Failed to delete dish: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
-  const handleUpdateServings = (day: string, mealType: any, dishId: string, delta: number) => {
-    setSchedule(prev => prev.map(slot => {
-      if (slot.date === day && slot.mealType === mealType) {
-        return {
-          ...slot,
-          items: slot.items.map(item => {
+  const handleUpdateServings = async (day: string, mealType: MealType, dishId: string, delta: number) => {
+    try {
+      const scheduleItem = schedule.find(s => s.date === day && s.mealType === mealType);
+      if (scheduleItem) {
+        const updated = {
+          ...scheduleItem,
+          items: scheduleItem.items.map(item => {
             if (item.dishId === dishId) {
-              const newServings = Math.max(1, item.servings + delta);
-              return { ...item, servings: newServings };
+              return { ...item, servings: Math.max(1, item.servings + delta) };
             }
             return item;
           })
         };
+        await updateScheduleItem(updated);
       }
-      return slot;
-    }));
+    } catch (error) {
+      alert('Failed to update servings: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
-  const handleRemoveFromSchedule = (day: string, mealType: any, dishIndex: number) => {
-    setSchedule(prev => prev.map(slot => {
-      if (slot.date === day && slot.mealType === mealType) {
-        const newItems = [...slot.items];
+  const handleRemoveFromSchedule = async (day: string, mealType: MealType, dishIndex: number) => {
+    try {
+      const scheduleItem = schedule.find(s => s.date === day && s.mealType === mealType);
+      if (scheduleItem) {
+        const newItems = [...scheduleItem.items];
         newItems.splice(dishIndex, 1);
-        return { ...slot, items: newItems };
+        
+        if (newItems.length === 0) {
+          await deleteScheduleItem(scheduleItem.id);
+        } else {
+          await updateScheduleItem({ ...scheduleItem, items: newItems });
+        }
       }
-      return slot;
-    }));
+    } catch (error) {
+      alert('Failed to remove dish: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
-  const [activeDish, setActiveDish] = useState<Dish | null>(null);
-
-  const handleChangeMealType = (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => {
+  const handleChangeMealType = async (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => {
     if (fromMealType === toMealType) return;
-    setSchedule(prev => {
-      const working = [...prev];
-      const fromIdx = working.findIndex(s => s.date === day && s.mealType === fromMealType);
-      if (fromIdx === -1) return prev;
 
-      const fromSlot = { ...working[fromIdx], items: [...working[fromIdx].items] };
+    try {
+      const fromSlot = schedule.find(s => s.date === day && s.mealType === fromMealType);
+      if (!fromSlot) return;
+
       const itemIdx = fromSlot.items.findIndex(i => i.dishId === dishId);
-      if (itemIdx === -1) return prev;
+      if (itemIdx === -1) return;
 
-      const [item] = fromSlot.items.splice(itemIdx, 1);
-      if (fromSlot.items.length === 0) {
-        working.splice(fromIdx, 1);
+      const item = fromSlot.items[itemIdx];
+      const newFromItems = [...fromSlot.items];
+      newFromItems.splice(itemIdx, 1);
+
+      // Update/delete from slot
+      if (newFromItems.length === 0) {
+        await deleteScheduleItem(fromSlot.id);
       } else {
-        working[fromIdx] = fromSlot;
+        await updateScheduleItem({ ...fromSlot, items: newFromItems });
       }
 
-      const destIdx = working.findIndex(s => s.date === day && s.mealType === toMealType);
-      if (destIdx >= 0) {
-        working[destIdx] = { ...working[destIdx], items: [...working[destIdx].items, item] };
+      // Add to destination slot
+      const toSlot = schedule.find(s => s.date === day && s.mealType === toMealType);
+      if (toSlot) {
+        await updateScheduleItem({ ...toSlot, items: [...toSlot.items, item] });
       } else {
-        working.push({ id: uuidv4(), date: day, mealType: toMealType, items: [item] });
+        await addScheduleItem({
+          id: uuidv4(),
+          date: day,
+          mealType: toMealType,
+          items: [item]
+        });
+      }
+    } catch (error) {
+      alert('Failed to change meal type: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  const handleRestoreBackup = async (backup: BackupData) => {
+    try {
+      let dishesAdded = 0;
+      let dishesSkipped = 0;
+      let scheduleAdded = 0;
+      let scheduleSkipped = 0;
+
+      // Add all dishes from backup, skip if already exists
+      for (const dish of backup.dishes) {
+        const existingDish = dishes.find(d => d.id === dish.id);
+        if (!existingDish) {
+          try {
+            await addDish(dish);
+            dishesAdded++;
+          } catch (error) {
+            console.error(`Failed to add dish ${dish.name}:`, error);
+            dishesSkipped++;
+          }
+        } else {
+          dishesSkipped++;
+        }
       }
 
-      return working;
-    });
+      // Add all schedule items from backup, skip if already exists
+      for (const scheduleItem of backup.schedule) {
+        const existingItem = schedule.find(s => s.id === scheduleItem.id);
+        if (!existingItem) {
+          try {
+            await addScheduleItem(scheduleItem);
+            scheduleAdded++;
+          } catch (error) {
+            console.error(`Failed to add schedule item:`, error);
+            scheduleSkipped++;
+          }
+        } else {
+          scheduleSkipped++;
+        }
+      }
+
+      alert(
+        `Restore complete!\n` +
+        `Dishes: ${dishesAdded} added, ${dishesSkipped} skipped\n` +
+        `Schedule: ${scheduleAdded} added, ${scheduleSkipped} skipped`
+      );
+    } catch (error) {
+      console.error(error);
+      alert('Failed to restore backup: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   const handleDragStart = (event: any) => {
@@ -161,13 +253,13 @@ function App() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDish(null);
 
     if (!over || !active.data.current || !over.data.current) return;
 
-    const data: any = active.data.current; // broaden typing for dynamic dnd-kit data payload
+    const data: any = active.data.current;
     const dish = data.dish as Dish;
     const { day } = over.data.current as any;
     if (!day) return;
@@ -175,54 +267,53 @@ function App() {
     const isRescheduling = !!data.isRescheduling;
     const servings = data.servings || 1;
 
-    setSchedule(prev => {
-      let working = [...prev];
-
+    try {
       if (isRescheduling) {
         const { sourceDay, sourceMealType, sourceIndex } = data;
         if (sourceDay === day && sourceMealType === mealType) {
-          return working; // dropped on same slot, no change
+          return;
         }
-        const srcIdx = working.findIndex(s => s.date === sourceDay && s.mealType === sourceMealType);
-        if (srcIdx >= 0) {
-          const srcSlot = { ...working[srcIdx] };
-            const newItems = [...srcSlot.items];
-            newItems.splice(sourceIndex, 1);
-            srcSlot.items = newItems;
-            if (srcSlot.items.length === 0) {
-              working.splice(srcIdx, 1); // remove empty slot
-            } else {
-              working[srcIdx] = srcSlot;
-            }
+
+        const srcSlot = schedule.find(s => s.date === sourceDay && s.mealType === sourceMealType);
+        if (srcSlot) {
+          const newItems = [...srcSlot.items];
+          newItems.splice(sourceIndex, 1);
+
+          if (newItems.length === 0) {
+            await deleteScheduleItem(srcSlot.id);
+          } else {
+            await updateScheduleItem({ ...srcSlot, items: newItems });
+          }
         }
       }
 
-      // Destination slot logic
-      const destIdx = working.findIndex(s => s.date === day && s.mealType === mealType);
-      if (destIdx >= 0) {
-        const destSlot = { ...working[destIdx] };
+      const destSlot = schedule.find(s => s.date === day && s.mealType === mealType);
+      if (destSlot) {
         const existingItemIndex = destSlot.items.findIndex(i => i.dishId === dish.id);
         if (existingItemIndex >= 0 && !isRescheduling) {
-          // adding from menu duplicates -> increment servings
-          destSlot.items[existingItemIndex] = {
-            ...destSlot.items[existingItemIndex],
-            servings: destSlot.items[existingItemIndex].servings + 1
+          const updated = { ...destSlot };
+          updated.items[existingItemIndex] = {
+            ...updated.items[existingItemIndex],
+            servings: updated.items[existingItemIndex].servings + 1
           };
+          await updateScheduleItem(updated);
         } else {
-          destSlot.items = [...destSlot.items, { dishId: dish.id, servings }];
+          await updateScheduleItem({
+            ...destSlot,
+            items: [...destSlot.items, { dishId: dish.id, servings }]
+          });
         }
-        working[destIdx] = destSlot;
       } else {
-        working.push({
+        await addScheduleItem({
           id: uuidv4(),
           date: day,
           mealType: mealType as any,
           items: [{ dishId: dish.id, servings }]
         });
       }
-
-      return working;
-    });
+    } catch (error) {
+      alert('Failed to update schedule: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   return (
@@ -237,6 +328,7 @@ function App() {
                 onRemoveFromSchedule={handleRemoveFromSchedule}
                 onUpdateServings={handleUpdateServings}
                 onChangeMealType={handleChangeMealType}
+                onRestoreBackup={handleRestoreBackup}
               />
             } />
             <Route path="menu" element={
@@ -261,4 +353,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <SupabaseProvider>
+      <AppContent />
+    </SupabaseProvider>
+  );
+}

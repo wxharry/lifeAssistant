@@ -1,10 +1,22 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Calendar, Utensils } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Calendar, Utensils, LogOut } from 'lucide-react';
+import { useSupabaseAuth } from '../contexts/SupabaseContext';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useSupabaseAuth();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      alert('Failed to logout: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -23,7 +35,7 @@ export default function Layout() {
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>LifeAssistant</h1>
           </div>
           
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 items-center">
             <Link 
               to="/" 
               className={`nav-link ${isActive('/') ? 'active' : ''}`}
@@ -38,6 +50,17 @@ export default function Layout() {
               <Utensils size={18} />
               Menu
             </Link>
+            <div style={{ marginLeft: '1rem', paddingLeft: '1rem', borderLeft: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="btn btn-ghost"
+                title="Logout"
+                style={{ padding: '0.35rem', display: 'flex', alignItems: 'center' }}
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </nav>
         </div>
       </header>

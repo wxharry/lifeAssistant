@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search, HardDrive, Upload } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
 import { DraggableDish } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import { exportScheduledDishes } from '../utils/exportScheduledDishes';
+import { exportBackup, importBackup, BackupData } from '../utils/exportBackup';
 import ExportModal from '../components/ExportModal';
 
 interface SchedulePageProps {
@@ -14,9 +15,10 @@ interface SchedulePageProps {
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => void;
   onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => void;
+  onRestoreBackup: (backup: BackupData) => Promise<void>;
 }
 
-export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType }: SchedulePageProps) {
+export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -58,6 +60,25 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
 
   const handleRemoveFromScheduleInternal = (day: string, mealType: MealType, dishIndex: number) => {
      onRemoveFromSchedule(day, mealType, dishIndex);
+  };
+
+  const handleBackupExport = () => {
+    exportBackup(dishes, schedule);
+  };
+
+  const handleBackupImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const backup = await importBackup(file);
+      await onRestoreBackup(backup);
+    } catch (error) {
+      alert(`Error importing backup: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    // Reset the input
+    event.target.value = '';
   };
 
   return (
@@ -158,6 +179,24 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
               <Download size={16} style={{ marginRight: '0.5rem' }} />
               Export Schedule
             </button>
+            <button 
+              onClick={handleBackupExport}
+              className="btn btn-secondary"
+              title="Export all dishes and schedules as a backup file"
+            >
+              <HardDrive size={16} style={{ marginRight: '0.5rem' }} />
+              Backup
+            </button>
+            <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Upload size={16} />
+              Restore
+              <input 
+                type="file" 
+                accept=".json" 
+                onChange={handleBackupImport}
+                style={{ display: 'none' }}
+              />
+            </label>
           </div>
         </div>
 
