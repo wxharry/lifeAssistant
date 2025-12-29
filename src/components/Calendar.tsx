@@ -28,14 +28,6 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
     }
   });
 
-  const style: React.CSSProperties = {
-    // Intentionally omit transform so element does not follow cursor
-    opacity: isDragging ? 0.7 : 1,
-    cursor: 'grab',
-    //outline: isDragging ? '2px solid var(--color-primary)' : undefined,
-    background: isDragging ? 'var(--color-surface-alt)' : undefined
-  };
-
   const handleMealTypeChange = (next: MealType) => {
     if (!onChangeMealType) return;
     onChangeMealType(day, mealType, next, dish.id);
@@ -44,21 +36,19 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      className={`dish-item group flex flex-col gap-1 cursor-grab ${isDragging ? 'dragging opacity-70 bg-gray-50' : ''}`}
       {...listeners}
       {...attributes}
-      className={`dish-item group flex flex-col gap-1 ${isDragging ? 'dragging' : ''}`}
     >
       <div className="flex justify-between items-center">
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>{dish.name}</span>
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap font-medium">{dish.name}</span>
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onRemoveDish(day, mealType, idx);
           }}
-          style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0.25rem' }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-danger"
+          className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600 bg-transparent border-none cursor-pointer px-1"
         >
           <X size={14} />
         </button>
@@ -75,50 +65,32 @@ function ScheduledDish({ dish, servings, idx, day, mealType, onRemoveDish, onUpd
           ))}
         </select>
       )}
-      <div className="flex items-center justify-between gap-1" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
-        <span style={{ whiteSpace: 'nowrap' }}>Servings:</span>
-        <div className="flex items-center gap-0.5 bg-gray-100 rounded px-0.5" style={{ flexShrink: 0 }}>
+      <div className="flex items-center justify-between gap-1 text-xs text-gray-600 mt-0.5">
+        <span className="whitespace-nowrap">Servings:</span>
+        <div className="flex items-center gap-0.5 bg-gray-100 rounded px-0.5 shrink-0">
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onUpdateServings(day, mealType, dish.id, -1);
             }}
-            className="hover:text-primary"
+            className="hover:text-blue-600 flex items-center justify-center leading-none p-0"
             disabled={servings <= 1}
             style={{ 
               opacity: servings <= 1 ? 0.3 : 1, 
               cursor: servings <= 1 ? 'default' : 'pointer',
-              padding: '0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1
             }}
           >
             <Minus size={10} />
           </button>
-          <span style={{ 
-            minWidth: '14px', 
-            textAlign: 'center', 
-            fontWeight: '600', 
-            color: 'var(--color-text-main)',
-            lineHeight: 1
-          }}>{servings}</span>
+          <span className="min-w-[14px] text-center font-semibold text-gray-900 leading-none">{servings}</span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onUpdateServings(day, mealType, dish.id, 1);
             }}
-            className="hover:text-primary"
-            style={{ 
-              padding: '0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1
-            }}
+            className="hover:text-blue-600 flex items-center justify-center leading-none p-0"
           >
             <Plus size={10} />
           </button>
@@ -264,8 +236,8 @@ export default function Calendar({ schedule, dishes, onRemoveFromSchedule, onUpd
         return (
           <div key={dateStr} className="day-column">
             <div className={`day-header ${isToday ? 'today' : ''}`}>
-              <div style={{ fontSize: '0.75rem', fontWeight: '500', opacity: isToday ? 0.9 : 1 }}>{dayName}</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{dayNum}</div>
+              <div className="text-xs font-medium" style={{ opacity: isToday ? 0.9 : 1 }}>{dayName}</div>
+              <div className="text-xl font-bold">{dayNum}</div>
             </div>
             <div className="flex flex-col gap-2">
               {MEAL_TYPES.map(mealType => (

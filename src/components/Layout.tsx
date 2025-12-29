@@ -21,18 +21,12 @@ export default function Layout() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="app-header">
-        <div className="container flex justify-between items-center" style={{ padding: '1rem 1.5rem' }}>
+        <div className="container-app flex justify-between items-center py-4 px-6">
           <div className="flex items-center gap-2">
-            <div style={{ 
-              width: '32px', height: '32px', 
-              background: 'var(--color-primary)', 
-              borderRadius: '8px', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 'bold'
-            }}>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
               LA
             </div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>LifeAssistant</h1>
+            <h1 className="text-xl font-bold">LifeAssistant</h1>
           </div>
           
           <nav className="flex gap-1 items-center">
@@ -41,22 +35,21 @@ export default function Layout() {
               className={`nav-link ${isActive('/') ? 'active' : ''}`}
             >
               <Calendar size={18} />
-              Schedule
+              <span className="hidden sm:inline">Schedule</span>
             </Link>
             <Link 
               to="/menu" 
               className={`nav-link ${isActive('/menu') ? 'active' : ''}`}
             >
               <Utensils size={18} />
-              Menu
+              <span className="hidden sm:inline">Menu</span>
             </Link>
-            <div style={{ marginLeft: '1rem', paddingLeft: '1rem', borderLeft: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{user?.email}</span>
+            <div className="ml-4 pl-4 border-l border-gray-200 flex items-center gap-2">
+              <span className="text-sm text-gray-600 hidden md:inline">{user?.email}</span>
               <button
                 onClick={handleLogout}
-                className="btn btn-ghost"
+                className="btn btn-ghost p-1.5 flex items-center"
                 title="Logout"
-                style={{ padding: '0.35rem', display: 'flex', alignItems: 'center' }}
               >
                 <LogOut size={16} />
               </button>
@@ -65,7 +58,7 @@ export default function Layout() {
         </div>
       </header>
       
-      <main style={{ flex: 1, width: '100%', padding: 0 }}>
+      <main className="flex-1 w-full p-0">
         <Outlet />
       </main>
     </div>

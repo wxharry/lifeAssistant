@@ -85,36 +85,31 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
     <div className="schedule-layout">
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-        <div className="flex justify-between items-center" style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-border)' }}>
-          {isSidebarOpen && <h3 style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>Dishes</h3>}
+        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+          {isSidebarOpen && <h3 className="text-sm font-bold">Dishes</h3>}
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="btn btn-ghost"
-            style={{ padding: '0.25rem' }}
+            className="btn btn-ghost p-1"
           >
             {isSidebarOpen ? <ChevronLeftIcon size={16} /> : <ChevronRightIcon size={16} />}
           </button>
         </div>
         
         {isSidebarOpen && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column'}}>
-            <div className="relative">
-              <Search className="absolute" size={16} style={{ left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col">
+            <div className="relative mb-3">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
               <input 
                 type="text"
                 placeholder="Search dishes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ 
-                  paddingLeft: '32px',
-                  width: '100%',
-                  fontSize: '0.875rem'
-                }}
+                className="pl-8 w-full text-sm"
               />
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="flex-1 overflow-y-auto flex flex-col gap-2">
               {filteredDishes.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                <div className="text-center p-4 text-gray-500 text-xs">
                   No dishes found
                 </div>
               ) : (
@@ -127,8 +122,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         )}
         {/* Vertical text when closed */}
         {!isSidebarOpen && (
-          <div className="flex items-center justify-center" style={{ flex: 1 }}>
-             <span style={{ transform: 'rotate(-90deg)', whiteSpace: 'nowrap', color: 'var(--color-text-muted)', fontWeight: '500', letterSpacing: '0.05em' }}>
+          <div className="flex items-center justify-center flex-1">
+             <span className="rotate-[-90deg] whitespace-nowrap text-gray-600 font-medium tracking-wider">
                Drag Dishes
              </span>
           </div>
@@ -136,71 +131,79 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
       </div>
 
       {/* Main Calendar */}
-      <div className="calendar-container">
-        <div className="flex justify-between items-center" style={{ padding: '0.5rem', borderBottom: '1px solid var(--color-border)', background: 'rgba(248, 249, 250, 0.5)' }}>
+      <div className="main-content">
+        <div className="flex flex-wrap justify-between items-center gap-4 p-2 border-b border-gray-200 bg-gray-50/50">
           <div className="flex items-center gap-4">
-            <div className="flex items-center" style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-              <button onClick={handlePrev} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><ChevronLeft size={18} /></button>
-              <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '500', minWidth: '200px', textAlign: 'center', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
+            <div className="flex items-center bg-white rounded-lg border border-gray-200 shadow-sm">
+              <button onClick={handlePrev} className="btn btn-ghost p-2 rounded-l-lg rounded-r-none"><ChevronLeft size={18} /></button>
+              <span className="px-4 py-2 text-sm font-medium min-w-[200px] text-center border-x border-gray-200">
                 {viewMode === 'week' ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}` : format(startDate, 'MMMM yyyy')}
               </span>
-              <button onClick={handleNext} className="btn btn-ghost" style={{ padding: '0.5rem', borderRadius: '0 var(--radius-md) var(--radius-md) 0' }}><ChevronRight size={18} /></button>
+              <button onClick={handleNext} className="btn btn-ghost p-2 rounded-r-lg rounded-l-none"><ChevronRight size={18} /></button>
             </div>
           </div>
-          <div className="flex gap-2 viewmode-toggle" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.125rem' }}>
+          <div className="flex gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('week')}
-              className={`btn btn-ghost viewmode-btn${viewMode === 'week' ? ' selected' : ''}`}
-              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: viewMode === 'week' ? 'bold' : 'normal', color: viewMode === 'week' ? 'var(--color-primary)' : 'var(--color-text-main)', boxShadow: viewMode === 'week' ? '0 0 0 2px var(--color-primary-light)' : 'none', background: viewMode === 'week' ? 'var(--color-primary-light)' : 'var(--color-surface)' }}
+              className={`px-3 py-1.5 rounded text-sm transition-all ${
+                viewMode === 'week' 
+                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Week
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`btn btn-ghost viewmode-btn${viewMode === 'month' ? ' selected' : ''}`}
-              style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: viewMode === 'month' ? 'bold' : 'normal', color: viewMode === 'month' ? 'var(--color-primary)' : 'var(--color-text-main)', boxShadow: viewMode === 'month' ? '0 0 0 2px var(--color-primary-light)' : 'none', background: viewMode === 'month' ? 'var(--color-primary-light)' : 'var(--color-surface)' }}
+              className={`px-3 py-1.5 rounded text-sm transition-all ${
+                viewMode === 'month' 
+                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Month
             </button>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button 
               onClick={handleGroceryExportClick}
               className="btn btn-primary"
             >
-              <Download size={16} style={{ marginRight: '0.5rem' }} />
-              Export Groceries
+              <Download size={16} className="mr-2" />
+              <span className="hidden sm:inline">Export Groceries</span>
+              <span className="sm:hidden">Groceries</span>
             </button>
             <button 
               onClick={handleScheduleExportClick}
               className="btn btn-primary"
             >
-              <Download size={16} style={{ marginRight: '0.5rem' }} />
-              Export Schedule
+              <Download size={16} className="mr-2" />
+              <span className="hidden sm:inline">Export Schedule</span>
+              <span className="sm:hidden">Schedule</span>
             </button>
             <button 
               onClick={handleBackupExport}
               className="btn btn-secondary"
               title="Export all dishes and schedules as a backup file"
             >
-              <HardDrive size={16} style={{ marginRight: '0.5rem' }} />
+              <HardDrive size={16} className="mr-2" />
               Backup
             </button>
-            <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Upload size={16} />
+            <label className="btn btn-secondary cursor-pointer">
+              <Upload size={16} className="mr-2" />
               Restore
               <input 
                 type="file" 
                 accept=".json" 
                 onChange={handleBackupImport}
-                style={{ display: 'none' }}
+                className="hidden"
               />
             </label>
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '1rem' }}>
+        <div className="flex-1 overflow-auto p-4">
            <Calendar 
              schedule={schedule} 
              dishes={dishes} 

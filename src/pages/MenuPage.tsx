@@ -43,43 +43,35 @@ export default function MenuPage({ dishes, onAddDish, onUpdateDish, onDeleteDish
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Menu Library</h2>
-          <p style={{ color: 'var(--color-text-muted)' }}>Manage your collection of dishes</p>
+          <h2 className="text-2xl mb-1">Menu Library</h2>
+          <p className="text-gray-500">Manage your collection of dishes</p>
         </div>
-        <button onClick={handleOpenAdd} className="btn btn-primary">
-          <Plus size={20} style={{ marginRight: '0.5rem' }} />
+        <button onClick={handleOpenAdd} className="btn btn-primary whitespace-nowrap">
+          <Plus size={20} className="mr-2" />
           Add New Dish
         </button>
       </div>
 
-      <div className="relative" style={{ maxWidth: '400px' }}>
-        <Search className="absolute" size={20} style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+      <div className="relative max-w-full sm:max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
         <input 
           type="text" 
           placeholder="Search dishes or ingredients..." 
-          style={{ paddingLeft: '40px' }}
+          className="pl-10 w-full"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
       </div>
 
       {filteredDishes.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', padding: '3rem', 
-          background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', 
-          border: '1px dashed var(--color-border)' 
-        }}>
-          <div style={{ 
-            width: '64px', height: '64px', background: 'var(--color-bg)', 
-            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem auto'
-          }}>
-            <ChefHat size={32} style={{ color: 'var(--color-text-muted)' }} />
+        <div className="text-center p-12 bg-white rounded-lg border border-dashed border-gray-300">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ChefHat size={32} className="text-gray-500" />
           </div>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: '500' }}>No dishes found</h3>
-          <p style={{ color: 'var(--color-text-muted)' }}>Try adding a new dish or adjusting your search.</p>
+          <h3 className="text-lg font-medium">No dishes found</h3>
+          <p className="text-gray-500">Try adding a new dish or adjusting your search.</p>
         </div>
       ) : (
         <div className="menu-grid">
@@ -87,26 +79,21 @@ export default function MenuPage({ dishes, onAddDish, onUpdateDish, onDeleteDish
             <div 
               key={dish.id} 
               onClick={() => handleOpenView(dish)}
-              className="card card-hover"
-              style={{ cursor: 'pointer', position: 'relative' }}
+              className="card card-hover cursor-pointer relative"
             >
-              <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>{dish.name}</h3>
+              <h3 className="text-lg mb-1">{dish.name}</h3>
               {dish.servings && dish.servings > 0 && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                <p className="text-xs text-gray-500 mb-2">
                   Makes {dish.servings} serving{dish.servings !== 1 ? 's' : ''}
                 </p>
               )}
               {dish.videoLink && (
-              <a style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <a className="text-sm text-gray-500 mb-4 whitespace-nowrap overflow-hidden text-ellipsis block">
                 {dish.videoLink}
               </a>
               )}
-              <div style={{ 
-                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                fontSize: '0.75rem', color: 'var(--color-text-muted)',
-                background: 'var(--color-bg)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)'
-              }}>
-                <span style={{ fontWeight: '600', color: 'var(--color-text-main)' }}>{dish.ingredients.length}</span> ingredients
+              <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                <span className="font-semibold text-gray-900">{dish.ingredients.length}</span> ingredients
               </div>
             </div>
           ))}

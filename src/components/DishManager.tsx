@@ -10,20 +10,19 @@ export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?:
       className="dish-item group"
     >
       <div className="flex justify-between items-start">
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontWeight: '500' }}>{dish.name}</h3>
+        <div className="flex-1">
+          <h3 className="font-medium">{dish.name}</h3>
           {dish.servings && dish.servings > 0 && (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginTop: '0.125rem' }}>
+            <p className="text-gray-500 text-xs mt-0.5">
               Makes {dish.servings} serving{dish.servings !== 1 ? 's' : ''}
             </p>
           )}
         </div>
         {onDelete && (
           <button 
-            onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onDelete(dish.id)}
-            style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-danger"
+            className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600 bg-transparent border-none cursor-pointer text-gray-500"
             title="Delete Dish"
           >
             &times;
@@ -31,12 +30,12 @@ export function DishListItem({ dish, onDelete, style }: { dish: Dish, onDelete?:
         )}
       </div>
       {dish.seasonings && dish.seasonings.length > 0 && (
-        <p style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.25rem', fontSize: '0.75rem' }}>
+        <p className="text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis mt-1 text-xs">
           {dish.seasonings.join(', ')}
         </p>
       )}
       {dish.ingredients.length > 0 && (
-        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+        <p className="text-sm text-gray-500 mt-1">
           {dish.ingredients.map(ingredient => ingredient.name).join(', ')}
         </p>
       )}
@@ -55,15 +54,13 @@ export function DraggableDish({ dish, onDelete }: DraggableDishProps) {
     data: { dish }
   });
 
-  const style: React.CSSProperties = {
-    // No transform so list item stays put; just style feedback
-    opacity: isDragging ? 0.7 : 1,
-    outline: isDragging ? '2px solid var(--color-primary)' : undefined,
-    cursor: 'grab'
-  };
-
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <div 
+      ref={setNodeRef} 
+      className={`cursor-grab ${isDragging ? 'opacity-70 outline outline-2 outline-blue-600' : ''}`}
+      {...listeners} 
+      {...attributes}
+    >
       <DishListItem dish={dish} onDelete={onDelete} />
     </div>
   );
@@ -124,7 +121,7 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
           + Add New Dish
         </button>
       ) : !hideAddButton && isAdding ? (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3" style={{ background: 'var(--color-bg)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 bg-gray-100 p-3 rounded-lg border border-gray-300">
           <input
             type="text"
             placeholder="Dish Name"
@@ -139,16 +136,16 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
               placeholder="Add Seasoning"
               value={seasoningInput}
               onChange={e => setSeasoningInput(e.target.value)}
-              style={{ flex: 1, fontSize: '0.75rem' }}
+              className="flex-1 text-xs"
             />
-            <button type="button" onClick={handleAddSeasoning} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>+</button>
+            <button type="button" onClick={handleAddSeasoning} className="btn btn-secondary px-2 py-1 text-xs">+</button>
           </div>
           {newDish.seasonings && newDish.seasonings.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {newDish.seasonings.map((s, idx) => (
-                <span key={idx} style={{ fontSize: '0.7rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '2px 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span key={idx} className="text-[0.7rem] bg-white border border-gray-300 rounded-full px-1.5 py-0.5 flex items-center gap-1">
                   {s}
-                  <button type="button" onClick={() => setNewDish(prev => ({...prev, seasonings: prev.seasonings?.filter((_, i) => i !== idx)}))} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}>&times;</button>
+                  <button type="button" onClick={() => setNewDish(prev => ({...prev, seasonings: prev.seasonings?.filter((_, i) => i !== idx)}))} className="border-none bg-transparent cursor-pointer p-0">&times;</button>
                 </span>
               ))}
             </div>
@@ -162,48 +159,48 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
           />
 
           <div className="flex flex-col gap-1">
-            <label style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Servings (this recipe makes)</label>
+            <label className="text-xs font-medium text-gray-500">Servings (this recipe makes)</label>
             <input
               type="number"
               min="1"
               placeholder="1"
               value={newDish.servings || 1}
               onChange={e => setNewDish({...newDish, servings: parseInt(e.target.value) || 1})}
-              style={{ fontSize: '0.75rem' }}
+              className="text-xs"
             />
           </div>
           
           <div className="flex flex-col gap-2">
-            <p style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Ingredients</p>
+            <p className="text-xs font-semibold text-gray-500">Ingredients</p>
             <div className="flex gap-2">
               <input 
                 placeholder="Name" 
-                style={{ flex: 1, fontSize: '0.75rem' }}
+                className="flex-1 text-xs"
                 value={ingredientInput.name}
                 onChange={e => setIngredientInput({...ingredientInput, name: e.target.value})}
               />
               <input 
                 placeholder="Qty" 
-                style={{ width: '48px', fontSize: '0.75rem' }}
+                className="w-12 text-xs"
                 value={ingredientInput.amount}
                 onChange={e => setIngredientInput({...ingredientInput, amount: e.target.value})}
               />
               <input 
                 placeholder="Unit" 
-                style={{ width: '48px', fontSize: '0.75rem' }}
+                className="w-12 text-xs"
                 value={ingredientInput.unit}
                 onChange={e => setIngredientInput({...ingredientInput, unit: e.target.value})}
               />
-              <button type="button" onClick={handleAddIngredient} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>+</button>
+              <button type="button" onClick={handleAddIngredient} className="btn btn-secondary px-2 py-1 text-xs">+</button>
             </div>
-            <ul style={{ fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <ul className="text-xs flex flex-col gap-1">
               {newDish.ingredients.map(ing => (
-                <li key={ing.id} className="flex justify-between" style={{ color: 'var(--color-text-muted)' }}>
+                <li key={ing.id} className="flex justify-between text-gray-500">
                   <span>{ing.amount} {ing.unit} {ing.name}</span>
                   <button 
                     type="button"
                     onClick={() => setNewDish(prev => ({...prev, ingredients: prev.ingredients.filter(i => i.id !== ing.id)}))}
-                    style={{ color: 'var(--color-danger)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    className="text-red-600 bg-transparent border-none cursor-pointer"
                   >
                     &times;
                   </button>
@@ -213,13 +210,13 @@ export default function DishManager({ dishes, onAddDish, onDeleteDish, hideAddBu
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button type="submit" className="btn btn-primary" style={{ flex: 1, fontSize: '0.75rem' }}>Save</button>
-            <button type="button" onClick={() => setIsAdding(false)} className="btn btn-ghost" style={{ fontSize: '0.75rem' }}>Cancel</button>
+            <button type="submit" className="btn btn-primary flex-1 text-xs">Save</button>
+            <button type="button" onClick={() => setIsAdding(false)} className="btn btn-ghost text-xs">Cancel</button>
           </div>
         </form>
       ) : null}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+      <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
         {dishes.map(dish => (
           <DraggableDish key={dish.id} dish={dish} onDelete={onDeleteDish} />
         ))}

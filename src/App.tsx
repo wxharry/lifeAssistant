@@ -60,15 +60,9 @@ function AppContent() {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'var(--color-bg)'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Loading...</div>
+      <div className="loading-container">
+        <div className="text-center">
+          <div className="loading-text">Loading...</div>
         </div>
       </div>
     );

@@ -48,17 +48,17 @@ export default function ExportModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '400px' }}>
-        <div className="flex justify-between items-center" style={{ padding: '1rem', borderBottom: '1px solid var(--color-border)' }}>
-          <h2 style={{ fontSize: '1.125rem' }}>{title}</h2>
-          <button onClick={onClose} className="btn btn-ghost" style={{ padding: '0.5rem' }}>
+      <div className="modal-content max-w-md">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <h2 className="text-lg">{title}</h2>
+          <button onClick={onClose} className="btn btn-ghost p-2">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Start Date</label>
+            <label className="text-sm font-medium text-gray-500">Start Date</label>
             <input
               type="date"
               value={startDate}
@@ -68,7 +68,7 @@ export default function ExportModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>End Date</label>
+            <label className="text-sm font-medium text-gray-500">End Date</label>
             <input
               type="date"
               value={endDate}
@@ -78,11 +78,11 @@ export default function ExportModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Export Format</label>
+            <label className="text-sm font-medium text-gray-500">Export Format</label>
             <select
               value={exportFormat}
               onChange={(e) => setExportFormat(e.target.value as 'txt' | 'json')}
-              style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+              className="p-2 rounded-lg border border-gray-300"
             >
               <option value="txt">Text (.txt)</option>
               <option value="json">JSON (.json)</option>
@@ -91,21 +91,21 @@ export default function ExportModal({
 
           {exportFormat === 'json' && (
             <div className="flex flex-col gap-1">
-              <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>List Name *</label>
+              <label className="text-sm font-medium text-gray-500">List Name *</label>
               <input
                 type="text"
                 placeholder="e.g., Weekly Shopping"
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
                 required={exportFormat === 'json'}
-                style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                className="p-2 rounded-lg border border-gray-300"
               />
             </div>
           )}
 
-          <div className="flex gap-3" style={{ marginTop: '1rem' }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Export</button>
-            <button type="button" onClick={onClose} className="btn btn-ghost" style={{ flex: 1 }}>Cancel</button>
+          <div className="flex gap-3 mt-4">
+            <button type="submit" className="btn btn-primary flex-1">Export</button>
+            <button type="button" onClick={onClose} className="btn btn-ghost flex-1">Cancel</button>
           </div>
         </form>
       </div>

@@ -26,71 +26,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '100vh',
-      background: 'var(--color-bg)'
-    }}>
-      <div style={{
-        background: 'var(--color-surface)',
-        padding: '2rem',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h1 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Life Assistant</h1>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1 className="auth-title">Life Assistant</h1>
         
         <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Email
-            </label>
+          <div className="form-group">
+            <label className="form-label">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '1rem'
-              }}
               required
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Password
-            </label>
+          <div className="form-group">
+            <label className="form-label">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '1rem'
-              }}
               required
             />
           </div>
 
           {error && (
-            <div style={{
-              padding: '0.75rem',
-              background: '#fee2e2',
-              color: '#991b1b',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '1rem',
-              fontSize: '0.875rem'
-            }}>
+            <div className="error-message">
               {error}
             </div>
           )}
@@ -98,16 +60,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', marginBottom: '1rem' }}
+            className="btn btn-primary w-full mb-4"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+        <p className="text-center text-gray-600">
           Don't have an account?{' '}
-          <a href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+          <a href="/signup" className="text-blue-600 hover:underline">
             Sign up
           </a>
         </p>
