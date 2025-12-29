@@ -183,6 +183,17 @@ export function useSchedule(userId: string | undefined) {
       .eq('user_id', userId);
 
     if (error) throw error;
+    
+    // Update local state
+    setSchedule(prev => {
+      const idx = prev.findIndex(s => s.id === item.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = item;
+        return updated;
+      }
+      return prev;
+    });
   };
 
   const deleteScheduleItem = async (itemId: string) => {
@@ -195,6 +206,9 @@ export function useSchedule(userId: string | undefined) {
       .eq('user_id', userId);
 
     if (error) throw error;
+    
+    // Update local state
+    setSchedule(prev => prev.filter(s => s.id !== itemId));
   };
 
   const upsertScheduleItem = async (item: ScheduleItem) => {
