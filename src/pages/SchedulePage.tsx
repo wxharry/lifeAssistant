@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search, HardDrive, Upload } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
@@ -20,11 +20,20 @@ interface SchedulePageProps {
 
 export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'month'>(() => {
+    // Initialize from localStorage, default to 'week'
+    const savedViewMode = localStorage.getItem('scheduleViewMode');
+    return (savedViewMode === 'week' || savedViewMode === 'month') ? savedViewMode : 'week';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isGroceryExportOpen, setIsGroceryExportOpen] = useState(false);
   const [isScheduleExportOpen, setIsScheduleExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Save viewMode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('scheduleViewMode', viewMode);
+  }, [viewMode]);
   
   // Calendar State
   const startDate = viewMode === 'week'
