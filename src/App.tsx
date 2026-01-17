@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { DndContext, DragEndEvent, DragOverlay } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { v4 as uuidv4 } from 'uuid';
 import Layout from './components/Layout';
 import MenuPage from './pages/MenuPage';
@@ -8,7 +7,7 @@ import SchedulePage from './pages/SchedulePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import { DishListItem } from './components/DishManager';
-import { Dish, ScheduleItem, MealType } from './types';
+import { Dish, MealType } from './types';
 import { SupabaseProvider, useSupabaseAuth } from './contexts/SupabaseContext';
 import { useDishes, useSchedule } from './hooks/useSupabaseData';
 import { BackupData } from './utils/exportBackup';
@@ -56,6 +55,15 @@ function AppContent() {
   const { dishes, addDish, updateDish, deleteDish } = useDishes(user?.id);
   const { schedule, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem } = useSchedule(user?.id);
   const [activeDish, setActiveDish] = useState<Dish | null>(null);
+
+  // Configure sensors for drag detection - require 5px movement before drag starts
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
 
   // Show loading state while checking authentication
   if (loading) {
@@ -257,8 +265,24 @@ function AppContent() {
     const dish = data.dish as Dish;
     const { day } = over.data.current as any;
     if (!day) return;
-    const mealType = (over.data.current as any).mealType ?? 'others';
+    
+    // Prompt user for meal type if not rescheduling
+    let mealType = (over.data.current as any).mealType ?? 'others';
     const isRescheduling = !!data.isRescheduling;
+    
+    if (!isRescheduling) {
+      const mealTypeInput = prompt(
+        `Which meal type for "${dish.name}" on ${day}?\n\nOptions: ${['breakfast', 'lunch', 'dinner', 'others'].join(', ')}`,
+        'breakfast'
+      );
+      
+      if (!mealTypeInput) return; // User cancelled
+      
+      if (['breakfast', 'lunch', 'dinner', 'others'].includes(mealTypeInput.toLowerCase())) {
+        mealType = mealTypeInput.toLowerCase() as MealType;
+      }
+    }
+    
     const servings = data.servings || 1;
 
     try {
@@ -312,7 +336,7 @@ function AppContent() {
 
   return (
     <BrowserRouter>
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={

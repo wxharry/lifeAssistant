@@ -1,11 +1,7 @@
-import { format } from 'date-fns';
 import { ChevronLeft, ChevronRight, Download, HardDrive, Upload } from 'lucide-react';
 
 interface FixedHeaderProps {
-  viewMode: 'week' | 'month';
-  setViewMode: (mode: 'week' | 'month') => void;
-  startDate: Date;
-  endDate: Date;
+  monthDisplay: string;
   onPrev: () => void;
   onNext: () => void;
   onGroceryExport: () => void;
@@ -15,10 +11,7 @@ interface FixedHeaderProps {
 }
 
 export default function FixedHeader({
-  viewMode,
-  setViewMode,
-  startDate,
-  endDate,
+  monthDisplay,
   onPrev,
   onNext,
   onGroceryExport,
@@ -36,36 +29,12 @@ export default function FixedHeader({
               <ChevronLeft size={18} />
             </button>
             <span className="px-4 py-2 text-sm font-medium min-w-[200px] text-center border-x border-gray-200">
-              {viewMode === 'week' ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}` : format(startDate, 'MMMM yyyy')}
+              {monthDisplay}
             </span>
             <button onClick={onNext} className="btn btn-ghost p-2 rounded-r-lg rounded-l-none">
               <ChevronRight size={18} />
             </button>
           </div>
-        </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-          <button
-            onClick={() => setViewMode('week')}
-            className={`px-3 py-1.5 rounded text-sm transition-all ${
-              viewMode === 'week' 
-                ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setViewMode('month')}
-            className={`px-3 py-1.5 rounded text-sm transition-all ${
-              viewMode === 'month' 
-                ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Month
-          </button>
         </div>
 
         {/* Export Buttons */}

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import { useState } from 'react';
+import { format, subMonths, addMonths } from 'date-fns';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
-import Calendar from '../components/Calendar';
+import SchedulerXCalendar from '../components/SchedulerXCalendar';
 import FixedHeader from '../components/FixedHeader';
 import { DraggableDish } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
@@ -21,36 +21,18 @@ interface SchedulePageProps {
 
 export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'month'>(() => {
-    // Initialize from localStorage, default to 'week'
-    const savedViewMode = localStorage.getItem('scheduleViewMode');
-    return (savedViewMode === 'week' || savedViewMode === 'month') ? savedViewMode : 'week';
-  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isGroceryExportOpen, setIsGroceryExportOpen] = useState(false);
   const [isScheduleExportOpen, setIsScheduleExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Save viewMode to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('scheduleViewMode', viewMode);
-  }, [viewMode]);
-  
-  // Calendar State
-  const startDate = viewMode === 'week'
-    ? startOfWeek(currentDate, { weekStartsOn: 1 })
-    : startOfMonth(currentDate);
-  const endDate = viewMode === 'week'
-    ? endOfWeek(currentDate, { weekStartsOn: 1 })
-    : endOfMonth(currentDate);
 
   const filteredDishes = dishes.filter(d => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.ingredients.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handlePrev = () => setCurrentDate(viewMode === 'week' ? subWeeks(currentDate, 1) : subMonths(currentDate, 1));
-  const handleNext = () => setCurrentDate(viewMode === 'week' ? addWeeks(currentDate, 1) : addMonths(currentDate, 1));
+  const handlePrev = () => setCurrentDate(subMonths(currentDate, 1));
+  const handleNext = () => setCurrentDate(addMonths(currentDate, 1));
 
   const handleGroceryExportClick = () => {
     setIsGroceryExportOpen(true);
@@ -67,6 +49,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
   const handleScheduleExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
     exportScheduledDishes(schedule, dishes, start, end, format, listName);
   };
+
+  const monthDisplay = format(currentDate, 'yyyy-MM-dd');
 
   const handleRemoveFromScheduleInternal = (day: string, mealType: MealType, dishIndex: number) => {
      onRemoveFromSchedule(day, mealType, dishIndex);
@@ -143,10 +127,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <FixedHeader 
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          startDate={startDate}
-          endDate={endDate}
+          monthDisplay={monthDisplay}
           onPrev={handlePrev}
           onNext={handleNext}
           onGroceryExport={handleGroceryExportClick}
@@ -156,14 +137,13 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         />
 
         <div className="flex-1 overflow-auto p-4">
-           <Calendar 
+           <SchedulerXCalendar 
              schedule={schedule} 
              dishes={dishes} 
              onRemoveFromSchedule={handleRemoveFromScheduleInternal}
              onUpdateServings={onUpdateServings}
              onChangeMealType={onChangeMealType}
-             startDate={startDate}
-             viewMode={viewMode}
+             currentDate={currentDate}
            />
         </div>
       </div>
@@ -172,8 +152,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         isOpen={isGroceryExportOpen}
         onClose={() => setIsGroceryExportOpen(false)}
         onExport={handleGroceryExportConfirm}
-        initialStartDate={startDate}
-        initialEndDate={endDate}
+        initialStartDate={currentDate}
+        initialEndDate={currentDate}
         title="Export Grocery List"
         storageKey="groceryListName"
       />
@@ -182,8 +162,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         isOpen={isScheduleExportOpen}
         onClose={() => setIsScheduleExportOpen(false)}
         onExport={handleScheduleExportConfirm}
-        initialStartDate={startDate}
-        initialEndDate={endDate}
+        initialStartDate={currentDate}
+        initialEndDate={currentDate}
         title="Export Scheduled Dishes"
         storageKey="scheduledDishesListName"
       />
