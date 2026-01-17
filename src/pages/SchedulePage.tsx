@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Download, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search, HardDrive, Upload } from 'lucide-react';
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
 import Calendar from '../components/Calendar';
+import FixedHeader from '../components/FixedHeader';
 import { DraggableDish } from '../components/DishManager';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import { exportScheduledDishes } from '../utils/exportScheduledDishes';
@@ -139,78 +140,20 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         )}
       </div>
 
-      {/* Main Calendar */}
-      <div className="main-content">
-        <div className="flex flex-wrap justify-between items-center gap-4 p-2 border-b border-gray-200 bg-gray-50/50">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center bg-white rounded-lg border border-gray-200 shadow-sm">
-              <button onClick={handlePrev} className="btn btn-ghost p-2 rounded-l-lg rounded-r-none"><ChevronLeft size={18} /></button>
-              <span className="px-4 py-2 text-sm font-medium min-w-[200px] text-center border-x border-gray-200">
-                {viewMode === 'week' ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}` : format(startDate, 'MMMM yyyy')}
-              </span>
-              <button onClick={handleNext} className="btn btn-ghost p-2 rounded-r-lg rounded-l-none"><ChevronRight size={18} /></button>
-            </div>
-          </div>
-          <div className="flex gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded text-sm transition-all ${
-                viewMode === 'week' 
-                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded text-sm transition-all ${
-                viewMode === 'month' 
-                  ? 'bg-blue-100 text-blue-700 font-semibold shadow-[0_0_0_2px_rgb(191,219,254)]' 
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Month
-            </button>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={handleGroceryExportClick}
-              className="btn btn-primary"
-            >
-              <Download size={16} className="mr-2" />
-              <span className="hidden sm:inline">Export Groceries</span>
-              <span className="sm:hidden">Groceries</span>
-            </button>
-            <button 
-              onClick={handleScheduleExportClick}
-              className="btn btn-primary"
-            >
-              <Download size={16} className="mr-2" />
-              <span className="hidden sm:inline">Export Schedule</span>
-              <span className="sm:hidden">Schedule</span>
-            </button>
-            <button 
-              onClick={handleBackupExport}
-              className="btn btn-secondary"
-              title="Export all dishes and schedules as a backup file"
-            >
-              <HardDrive size={16} className="mr-2" />
-              Backup
-            </button>
-            <label className="btn btn-secondary cursor-pointer">
-              <Upload size={16} className="mr-2" />
-              Restore
-              <input 
-                type="file" 
-                accept=".json" 
-                onChange={handleBackupImport}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <FixedHeader 
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          startDate={startDate}
+          endDate={endDate}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onGroceryExport={handleGroceryExportClick}
+          onScheduleExport={handleScheduleExportClick}
+          onBackupExport={handleBackupExport}
+          onBackupImport={handleBackupImport}
+        />
 
         <div className="flex-1 overflow-auto p-4">
            <Calendar 
