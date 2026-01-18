@@ -40,9 +40,9 @@ interface ScheduleEvent {
 interface SchedulerXCalendarProps {
   schedule: ScheduleItem[];
   dishes: Dish[];
-  onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => void;
-  onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => void;
-  onChangeMealType?: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => void;
+  onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
+  onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
+  onChangeMealType?: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => Promise<void> | void;
   currentDate: Date;
 }
 
@@ -198,6 +198,7 @@ export default function SchedulerXCalendar({
   // Handle modal delete
   const handleModalDelete = useCallback(() => {
     if (selectedEvent) {
+      console.log('[SchedulerXCalendar] handleModalDelete called', { day: selectedEvent.day, mealType: selectedEvent.mealType, dishIndex: selectedEvent.dishIndex });
       onRemoveFromSchedule(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishIndex);
       setSelectedEvent(null);
       setIsModalOpen(false);

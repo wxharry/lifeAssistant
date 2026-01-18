@@ -17,7 +17,7 @@ interface EventEditModalProps {
   onClose: () => void;
   onUpdateServings: (delta: number) => void;
   onChangeMealType: (newMealType: MealType) => void;
-  onDelete: () => void;
+  onDelete: () => Promise<void> | void;
 }
 
 export default function EventEditModal({
@@ -37,10 +37,14 @@ export default function EventEditModal({
     onChangeMealType(newType);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete ${event.dish.name} from the schedule?`)) {
-      onDelete();
-      onClose();
+      try {
+        await onDelete();
+        onClose();
+      } catch (error) {
+        alert('Failed to delete: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
 import { ScheduleItem, Dish, MealType } from '../types';
@@ -13,9 +13,9 @@ import ExportModal from '../components/ExportModal';
 interface SchedulePageProps {
   schedule: ScheduleItem[];
   dishes: Dish[];
-  onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => void;
-  onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => void;
-  onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => void;
+  onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
+  onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
+  onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => Promise<void> | void;
   onRestoreBackup: (backup: BackupData) => Promise<void>;
 }
 
@@ -52,9 +52,9 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
 
   const monthDisplay = format(currentDate, 'yyyy-MM-dd');
 
-  const handleRemoveFromScheduleInternal = (day: string, mealType: MealType, dishIndex: number) => {
-     onRemoveFromSchedule(day, mealType, dishIndex);
-  };
+  const handleRemoveFromScheduleInternal = useCallback((day: string, mealType: MealType, dishIndex: number) => {
+    onRemoveFromSchedule(day, mealType, dishIndex);
+  }, [onRemoveFromSchedule]);
 
   const handleBackupExport = () => {
     exportBackup(dishes, schedule);
