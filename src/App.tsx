@@ -269,9 +269,9 @@ function AppContent() {
     const servings = data.servings || 1;
     const isRescheduling = !!data.isRescheduling;
     
-    // For non-rescheduling, use 'others' as default meal type
-    const mealType = isRescheduling 
-      ? ((over.data.current as any).mealType ?? 'others')
+    // Preserve original mealType when rescheduling; for new adds default to 'others'
+    const mealType: MealType = isRescheduling 
+      ? (data.sourceMealType as MealType)
       : 'others';
 
     try {
