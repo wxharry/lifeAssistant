@@ -266,24 +266,13 @@ function AppContent() {
     const { day } = over.data.current as any;
     if (!day) return;
     
-    // Prompt user for meal type if not rescheduling
-    let mealType = (over.data.current as any).mealType ?? 'others';
+    const servings = data.servings || 1;
     const isRescheduling = !!data.isRescheduling;
     
-    if (!isRescheduling) {
-      const mealTypeInput = prompt(
-        `Which meal type for "${dish.name}" on ${day}?\n\nOptions: ${['breakfast', 'lunch', 'dinner', 'others'].join(', ')}`,
-        'breakfast'
-      );
-      
-      if (!mealTypeInput) return; // User cancelled
-      
-      if (['breakfast', 'lunch', 'dinner', 'others'].includes(mealTypeInput.toLowerCase())) {
-        mealType = mealTypeInput.toLowerCase() as MealType;
-      }
-    }
-    
-    const servings = data.servings || 1;
+    // For non-rescheduling, use 'others' as default meal type
+    const mealType = isRescheduling 
+      ? ((over.data.current as any).mealType ?? 'others')
+      : 'others';
 
     try {
       if (isRescheduling) {
@@ -307,25 +296,15 @@ function AppContent() {
 
       const destSlot = schedule.find(s => s.date === day && s.mealType === mealType);
       if (destSlot) {
-        const existingItemIndex = destSlot.items.findIndex(i => i.dishId === dish.id);
-        if (existingItemIndex >= 0 && !isRescheduling) {
-          const updated = { ...destSlot };
-          updated.items[existingItemIndex] = {
-            ...updated.items[existingItemIndex],
-            servings: updated.items[existingItemIndex].servings + 1
-          };
-          await updateScheduleItem(updated);
-        } else {
-          await updateScheduleItem({
-            ...destSlot,
-            items: [...destSlot.items, { dishId: dish.id, servings }]
-          });
-        }
+        await updateScheduleItem({
+          ...destSlot,
+          items: [...destSlot.items, { dishId: dish.id, servings }]
+        });
       } else {
         await addScheduleItem({
           id: uuidv4(),
           date: day,
-          mealType: mealType as any,
+          mealType,
           items: [{ dishId: dish.id, servings }]
         });
       }
