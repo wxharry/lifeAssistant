@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Plus, Minus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Plus, Minus, Trash2, Check } from 'lucide-react';
 import { MealType, MEAL_TYPES } from '../types';
 
 interface ScheduleEvent {
@@ -15,8 +15,7 @@ interface EventEditModalProps {
   event: ScheduleEvent | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateServings: (delta: number) => void;
-  onChangeMealType: (newMealType: MealType) => void;
+  onConfirm: (servings: number, mealType: MealType) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
 }
 
@@ -24,17 +23,37 @@ export default function EventEditModal({
   event,
   isOpen,
   onClose,
-  onUpdateServings,
-  onChangeMealType,
+  onConfirm,
   onDelete
 }: EventEditModalProps) {
-  const [selectedMealType, setSelectedMealType] = useState<MealType>(event?.mealType || 'others');
+  const [localServings, setLocalServings] = useState(1);
+  const [localMealType, setLocalMealType] = useState<MealType>('others');
+
+  // Initialize local state when modal opens or event changes
+  useEffect(() => {
+    if (isOpen && event) {
+      setLocalServings(event.servings);
+      setLocalMealType(event.mealType);
+    }
+  }, [isOpen, event]);
 
   if (!isOpen || !event) return null;
 
   const handleMealTypeChange = (newType: MealType) => {
-    setSelectedMealType(newType);
-    onChangeMealType(newType);
+    setLocalMealType(newType);
+  };
+
+  const handleServingsChange = (delta: number) => {
+    setLocalServings(prev => Math.max(1, prev + delta));
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(localServings, localMealType);
+      onClose();
+    } catch (error) {
+      alert('Failed to save changes: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   const handleDelete = async () => {
@@ -69,17 +88,17 @@ export default function EventEditModal({
             <label className="block text-sm font-semibold text-gray-700">Servings</label>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => onUpdateServings(-1)}
+                onClick={() => handleServingsChange(-1)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Remove 1 serving"
               >
                 <Minus size={18} className="text-gray-600" />
               </button>
               <span className="text-lg font-bold text-gray-900 min-w-[3rem] text-center">
-                {event.servings}x
+                {localServings}
               </span>
               <button
-                onClick={() => onUpdateServings(1)}
+                onClick={() => handleServingsChange(1)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Add 1 serving"
               >
@@ -97,7 +116,7 @@ export default function EventEditModal({
                   key={type}
                   onClick={() => handleMealTypeChange(type)}
                   className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                    selectedMealType === type
+                    localMealType === type
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -119,16 +138,24 @@ export default function EventEditModal({
         <div className="flex gap-2 p-4 border-t border-gray-200">
           <button
             onClick={handleDelete}
-            className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center justify-center gap-2"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center justify-center gap-2"
           >
             <Trash2 size={16} />
             Delete
           </button>
+          <div className="flex-1" />
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
           >
-            Close
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <Check size={16} />
+            Confirm
           </button>
         </div>
       </div>

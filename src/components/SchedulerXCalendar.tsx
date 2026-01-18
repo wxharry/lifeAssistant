@@ -179,21 +179,24 @@ export default function SchedulerXCalendar({
     setIsModalOpen(true);
   }, []);
 
-  // Handle modal servings update
-  const handleModalUpdateServings = useCallback((delta: number) => {
-    if (selectedEvent) {
-      onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
-    }
-  }, [selectedEvent, onUpdateServings]);
+  // Handle modal confirm - save all changes
+  const handleModalConfirm = useCallback(async (newServings: number, newMealType: MealType) => {
+    if (!selectedEvent) return;
 
-  // Handle modal meal type change
-  const handleModalChangeMealType = useCallback((newMealType: MealType) => {
-    if (selectedEvent && onChangeMealType) {
-      onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId);
-      setSelectedEvent(null);
-      setIsModalOpen(false);
+    const servingsChanged = newServings !== selectedEvent.servings;
+    const mealTypeChanged = newMealType !== selectedEvent.mealType;
+
+    // Update servings if changed
+    if (servingsChanged) {
+      const delta = newServings - selectedEvent.servings;
+      await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
     }
-  }, [selectedEvent, onChangeMealType]);
+
+    // Update meal type if changed (this also handles moving the item)
+    if (mealTypeChanged && onChangeMealType) {
+      await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId);
+    }
+  }, [selectedEvent, onUpdateServings, onChangeMealType]);
 
   // Handle modal delete
   const handleModalDelete = useCallback(() => {
@@ -263,8 +266,7 @@ export default function SchedulerXCalendar({
         event={selectedEvent}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onUpdateServings={handleModalUpdateServings}
-        onChangeMealType={handleModalChangeMealType}
+        onConfirm={handleModalConfirm}
         onDelete={handleModalDelete}
       />
     </div>
