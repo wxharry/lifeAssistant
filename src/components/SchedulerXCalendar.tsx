@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { format, startOfWeek, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameMonth, addDays } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { ScheduleItem, Dish, MealType, MEAL_TYPES } from '../types';
 import EventEditModal from './EventEditModal';
+import { DraggableEvent } from './DraggableEvent';
 
 // Meal time mapping
 const MEAL_TIMES: Record<MealType, string> = {
@@ -14,21 +15,21 @@ const MEAL_TIMES: Record<MealType, string> = {
 };
 
 // Color mapping for meal types
-const MEAL_COLORS: Record<MealType, string> = {
+export const MEAL_COLORS: Record<MealType, string> = {
   breakfast: '#fef3c7',
   lunch: '#dbeafe',
   dinner: '#fce7f3',
   others: '#e0e7ff'
 };
 
-const MEAL_DARK_COLORS: Record<MealType, string> = {
+export const MEAL_DARK_COLORS: Record<MealType,   string> = {
   breakfast: '#fbbf24',
   lunch: '#60a5fa',
   dinner: '#f472b6',
   others: '#818cf8'
 };
 
-interface ScheduleEvent {
+export interface ScheduleEvent {
   day: string;
   mealType: MealType;
   dishId: string;
@@ -61,47 +62,6 @@ function DroppableDay({ dateStr, children }: { dateStr: string; children: React.
       }`}
     >
       {children}
-    </div>
-  );
-}
-
-// Draggable event item
-function DraggableEvent({ event, onDoubleClick }: { event: ScheduleEvent; onDoubleClick: () => void }) {
-  const { setNodeRef, isDragging, attributes, listeners } = useDraggable({
-    id: `event-${event.day}-${event.mealType}-${event.dishId}-${event.dishIndex}`,
-    data: {
-      dish: event.dish,
-      servings: event.servings,
-      isRescheduling: true,
-      sourceDay: event.day,
-      sourceMealType: event.mealType,
-      sourceIndex: event.dishIndex,
-      dishId: event.dishId
-    }
-  });
-
-  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    onDoubleClick();
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onDoubleClick={handleDoubleClick}
-      className={`px-2 py-1 mb-1 text-xs rounded cursor-grab active:cursor-grabbing transition-opacity select-none ${
-        isDragging ? 'opacity-50' : ''
-      }`}
-      style={{
-        backgroundColor: MEAL_COLORS[event.mealType],
-        borderLeft: `3px solid ${MEAL_DARK_COLORS[event.mealType]}`,
-        userSelect: 'none',
-      }}
-    >
-      <div className="font-semibold pointer-events-none">{event.dish.name}</div>
-      <div className="text-gray-600 pointer-events-none">{event.mealType} • {event.servings}x</div>
     </div>
   );
 }

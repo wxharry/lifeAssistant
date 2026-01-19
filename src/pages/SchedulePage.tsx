@@ -4,7 +4,7 @@ import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Searc
 import { ScheduleItem, Dish, MealType } from '../types';
 import SchedulerXCalendar from '../components/SchedulerXCalendar';
 import FixedHeader from '../components/FixedHeader';
-import { DraggableDish } from '../components/DishManager';
+import { DraggableDish } from '../components/DraggableDish';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import { exportScheduledDishes } from '../utils/exportScheduledDishes';
 import { exportBackup, importBackup, BackupData } from '../utils/exportBackup';
@@ -101,7 +101,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
                 className="pl-8 w-full text-sm"
               />
             </div>
-            <div className="flex-1 overflow-y-auto flex flex-col gap-2">
+            <div className="flex-1 overflow-y-auto flex flex-wrap gap-2">
               {filteredDishes.length === 0 ? (
                 <div className="text-center p-4 text-gray-500 text-xs">
                   No dishes found
