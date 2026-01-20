@@ -6,12 +6,12 @@ import MenuPage from './pages/MenuPage';
 import SchedulePage from './pages/SchedulePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import { DishListItem } from './components/DishManager';
 import { Dish, MealType } from './types';
 import { SupabaseProvider, useSupabaseAuth } from './contexts/SupabaseContext';
 import { useDishes, useSchedule } from './hooks/useSupabaseData';
 import { BackupData } from './utils/exportBackup';
 import { useState } from 'react';
+import { MEAL_COLORS, MEAL_DARK_COLORS } from './components/SchedulerXCalendar';
 
 // Initial Data (Mock) - kept for fallback/demo purposes
 const INITIAL_DISHES: Dish[] = [
@@ -54,7 +54,12 @@ function AppContent() {
   const { user, loading } = useSupabaseAuth();
   const { dishes, addDish, updateDish, deleteDish } = useDishes(user?.id);
   const { schedule, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem } = useSchedule(user?.id);
-  const [activeDish, setActiveDish] = useState<Dish | null>(null);
+
+  type ActiveDrag =
+    | { type: 'dish'; dish: Dish }
+    | { type: 'event'; dish: Dish; mealType: MealType; servings: number };
+
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
   // Configure sensors for drag detection - require 5px movement before drag starts
   const sensors = useSensors(
@@ -250,14 +255,28 @@ function AppContent() {
   };
 
   const handleDragStart = (event: any) => {
-    if (event.active.data.current?.dish) {
-      setActiveDish(event.active.data.current.dish);
+    const data = event.active.data.current;
+    if (!data?.dish) {
+      setActiveDrag(null);
+      return;
     }
+
+    if (data.isRescheduling) {
+      setActiveDrag({
+        type: 'event',
+        dish: data.dish as Dish,
+        mealType: data.sourceMealType as MealType,
+        servings: data.servings || 1,
+      });
+      return;
+    }
+
+    setActiveDrag({ type: 'dish', dish: data.dish as Dish });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveDish(null);
+    setActiveDrag(null);
 
     if (!over || !active.data.current || !over.data.current) return;
 
@@ -313,6 +332,33 @@ function AppContent() {
     }
   };
 
+  const renderDragOverlay = () => {
+    if (!activeDrag) return null;
+
+    if (activeDrag.type === 'dish') {
+      return (
+        <div style={{ width: '240px', opacity: 0.9, backgroundColor: '#dbe4ff', }} className="rounded border border-gray-200 bg-blue px-3 py-2 shadow-md">
+          <div className="font-semibold pointer-events-none">{activeDrag.dish.name}</div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        style={{
+          width: '220px',
+          backgroundColor: MEAL_COLORS[activeDrag.mealType],
+          borderLeft: `4px solid ${MEAL_DARK_COLORS[activeDrag.mealType]}`,
+          opacity: 0.95,
+        }}
+        className="rounded px-3 py-2 shadow-md"
+      >
+        <div className="font-semibold text-sm text-gray-800">{activeDrag.dish.name}</div>
+        <div className="text-xs text-gray-600">{activeDrag.mealType} • {activeDrag.servings}x</div>
+      </div>
+    );
+  };
+
   return (
     <BrowserRouter>
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -338,13 +384,7 @@ function AppContent() {
             } />
           </Route>
         </Routes>
-        <DragOverlay>
-          {activeDish ? (
-            <div style={{ width: '250px', opacity: 0.8 }}>
-               <DishListItem dish={activeDish} />
-            </div>
-          ) : null}
-        </DragOverlay>
+        <DragOverlay>{renderDragOverlay()}</DragOverlay>
       </DndContext>
     </BrowserRouter>
   );
