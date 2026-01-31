@@ -15,7 +15,7 @@ interface SchedulePageProps {
   dishes: Dish[];
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
-  onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => Promise<void> | void;
+  onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => Promise<void> | void;
   onRestoreBackup: (backup: BackupData) => Promise<void>;
 }
 

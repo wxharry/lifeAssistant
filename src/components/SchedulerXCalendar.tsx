@@ -43,7 +43,7 @@ interface SchedulerXCalendarProps {
   dishes: Dish[];
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
-  onChangeMealType?: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => Promise<void> | void;
+  onChangeMealType?: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => Promise<void> | void;
   currentDate: Date;
 }
 
@@ -146,15 +146,20 @@ export default function SchedulerXCalendar({
     const servingsChanged = newServings !== selectedEvent.servings;
     const mealTypeChanged = newMealType !== selectedEvent.mealType;
 
-    // Update servings if changed
-    if (servingsChanged) {
-      const delta = newServings - selectedEvent.servings;
-      await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
-    }
+    // If both changed, handle in one operation
+    if (servingsChanged && mealTypeChanged && onChangeMealType) {
+      await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId, newServings);
+    } else {
+      // Update servings if only servings changed
+      if (servingsChanged) {
+        const delta = newServings - selectedEvent.servings;
+        await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
+      }
 
-    // Update meal type if changed (this also handles moving the item)
-    if (mealTypeChanged && onChangeMealType) {
-      await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId);
+      // Update meal type if only meal type changed
+      if (mealTypeChanged && onChangeMealType) {
+        await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId);
+      }
     }
   }, [selectedEvent, onUpdateServings, onChangeMealType]);
 

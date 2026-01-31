@@ -166,7 +166,7 @@ function AppContent() {
     }
   };
 
-  const handleChangeMealType = async (day: string, fromMealType: MealType, toMealType: MealType, dishId: string) => {
+  const handleChangeMealType = async (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => {
     if (fromMealType === toMealType) return;
 
     try {
@@ -177,6 +177,8 @@ function AppContent() {
       if (itemIdx === -1) return;
 
       const item = fromSlot.items[itemIdx];
+      // Update servings if provided
+      const itemToMove = newServings !== undefined ? { ...item, servings: newServings } : item;
       const newFromItems = [...fromSlot.items];
       newFromItems.splice(itemIdx, 1);
 
@@ -187,16 +189,16 @@ function AppContent() {
         await updateScheduleItem({ ...fromSlot, items: newFromItems });
       }
 
-      // Add to destination slot
+      // Add to destination slot with updated servings
       const toSlot = schedule.find(s => s.date === day && s.mealType === toMealType);
       if (toSlot) {
-        await updateScheduleItem({ ...toSlot, items: [...toSlot.items, item] });
+        await updateScheduleItem({ ...toSlot, items: [...toSlot.items, itemToMove] });
       } else {
         await addScheduleItem({
           id: uuidv4(),
           date: day,
           mealType: toMealType,
-          items: [item]
+          items: [itemToMove]
         });
       }
     } catch (error) {
