@@ -14,6 +14,19 @@ const MEAL_TIMES: Record<MealType, string> = {
   others: '15:00'
 };
 
+// Define meal type order for sorting
+const MEAL_TYPE_ORDER: Record<MealType, number> = {
+  'breakfast': 0,
+  'lunch': 1,
+  'dinner': 2,
+  'others': 3
+};
+
+// Sort events by meal type
+const sortEventsByMealType = (events: ScheduleEvent[]) => {
+  return [...events].sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
+};
+
 // Color mapping for meal types
 export const MEAL_COLORS: Record<MealType, string> = {
   breakfast: '#fef3c7',
@@ -106,7 +119,7 @@ export default function SchedulerXCalendar({
     return { weekDays, weeks: groupedWeeks };
   }, [currentDate]);
 
-  // Map schedule items by date for quick lookup
+  // Map schedule items by date for quick lookup, sorted by meal type
   const scheduleByDate = useMemo(() => {
     const map = new Map<string, ScheduleEvent[]>();
     schedule.forEach(scheduleItem => {
@@ -128,6 +141,10 @@ export default function SchedulerXCalendar({
         }
         map.get(scheduleItem.date)!.push(event);
       });
+    });
+    // Sort events by meal type for each date
+    map.forEach((events, date) => {
+      map.set(date, sortEventsByMealType(events));
     });
     return map;
   }, [schedule, dishes]);
