@@ -19,7 +19,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       <header className="app-header">
         <div className="container-app flex justify-between items-center py-4 px-6">
           <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export default function Layout() {
         </div>
       </header>
       
-      <main className="flex-1 w-full p-0">
+      <main className="flex-1 w-full p-0 overflow-hidden">
         <Outlet />
       </main>
     </div>
