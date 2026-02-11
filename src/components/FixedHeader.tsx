@@ -4,8 +4,7 @@ interface FixedHeaderProps {
   monthDisplay: string;
   onPrev: () => void;
   onNext: () => void;
-  onGroceryExport: () => void;
-  onScheduleExport: () => void;
+  onExport: () => void;
   onBackupExport: () => void;
   onBackupImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -14,8 +13,7 @@ export default function FixedHeader({
   monthDisplay,
   onPrev,
   onNext,
-  onGroceryExport,
-  onScheduleExport,
+  onExport,
   onBackupExport,
   onBackupImport
 }: FixedHeaderProps) {
@@ -40,20 +38,12 @@ export default function FixedHeader({
         {/* Export Buttons */}
         <div className="flex flex-wrap gap-2">
           <button 
-            onClick={onGroceryExport}
+            onClick={onExport}
             className="btn btn-primary"
           >
             <Download size={16} className="mr-2" />
-            <span className="hidden sm:inline">Export Groceries</span>
-            <span className="sm:hidden">Groceries</span>
-          </button>
-          <button 
-            onClick={onScheduleExport}
-            className="btn btn-primary"
-          >
-            <Download size={16} className="mr-2" />
-            <span className="hidden sm:inline">Export Schedule</span>
-            <span className="sm:hidden">Schedule</span>
+            <span className="hidden sm:inline">Export</span>
+            <span className="sm:hidden">Export</span>
           </button>
           <button 
             onClick={onBackupExport}

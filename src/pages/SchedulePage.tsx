@@ -8,7 +8,7 @@ import { DraggableDish } from '../components/DraggableDish';
 import { exportGroceryList } from '../utils/exportGroceryList';
 import { exportScheduledDishes } from '../utils/exportScheduledDishes';
 import { exportBackup, importBackup, BackupData } from '../utils/exportBackup';
-import ExportModal from '../components/ExportModal';
+import ExportModal, { ExportItemConfig } from '../components/ExportModal';
 
 interface SchedulePageProps {
   schedule: ScheduleItem[];
@@ -22,8 +22,7 @@ interface SchedulePageProps {
 export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isGroceryExportOpen, setIsGroceryExportOpen] = useState(false);
-  const [isScheduleExportOpen, setIsScheduleExportOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredDishes = dishes.filter(d => 
@@ -34,20 +33,20 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
   const handlePrev = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNext = () => setCurrentDate(addMonths(currentDate, 1));
 
-  const handleGroceryExportClick = () => {
-    setIsGroceryExportOpen(true);
+  const handleExportClick = () => {
+    setIsExportOpen(true);
   };
 
-  const handleScheduleExportClick = () => {
-    setIsScheduleExportOpen(true);
-  };
-
-  const handleGroceryExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
-    exportGroceryList(schedule, dishes, start, end, format, listName);
-  };
-
-  const handleScheduleExportConfirm = (start: Date, end: Date, format: 'txt' | 'json', listName?: string) => {
-    exportScheduledDishes(schedule, dishes, start, end, format, listName);
+  const handleExportConfirm = (start: Date, end: Date, items: ExportItemConfig[]) => {
+    items.forEach(item => {
+      if (!item.checked) return;
+      if (item.key === 'grocery') {
+        exportGroceryList(schedule, dishes, start, end, item.format, item.listName || undefined);
+      }
+      if (item.key === 'schedule') {
+        exportScheduledDishes(schedule, dishes, start, end, item.format, item.listName || undefined);
+      }
+    });
   };
 
   const monthDisplay = format(currentDate, 'yyyy-MM-dd');
@@ -130,8 +129,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
           monthDisplay={monthDisplay}
           onPrev={handlePrev}
           onNext={handleNext}
-          onGroceryExport={handleGroceryExportClick}
-          onScheduleExport={handleScheduleExportClick}
+          onExport={handleExportClick}
           onBackupExport={handleBackupExport}
           onBackupImport={handleBackupImport}
         />
@@ -149,23 +147,16 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
       </div>
 
       <ExportModal 
-        isOpen={isGroceryExportOpen}
-        onClose={() => setIsGroceryExportOpen(false)}
-        onExport={handleGroceryExportConfirm}
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        onExport={handleExportConfirm}
         initialStartDate={currentDate}
         initialEndDate={currentDate}
-        title="Export Grocery List"
-        storageKey="groceryListName"
-      />
-
-      <ExportModal 
-        isOpen={isScheduleExportOpen}
-        onClose={() => setIsScheduleExportOpen(false)}
-        onExport={handleScheduleExportConfirm}
-        initialStartDate={currentDate}
-        initialEndDate={currentDate}
-        title="Export Scheduled Dishes"
-        storageKey="scheduledDishesListName"
+        title="Export"
+        items={[
+          { key: 'grocery', label: 'Grocery List', storageKey: 'groceryListName', defaultChecked: true, defaultFormat: 'txt' },
+          { key: 'schedule', label: 'Scheduled Dishes', storageKey: 'scheduledDishesListName', defaultChecked: true, defaultFormat: 'txt' }
+        ]}
       />
     </div>
   );
