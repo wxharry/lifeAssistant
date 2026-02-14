@@ -14,7 +14,7 @@ export function DraggableDish({ dish }: DraggableDishProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`px-4 py-2 mb-2 text-sm rounded cursor-grab active:cursor-grabbing transition-opacity select-none ${isDragging ? 'opacity-50' : ''}`}
+      className={`px-4 py-2 mb-2 h-10 text-sm rounded cursor-grab active:cursor-grabbing transition-opacity select-none flex items-center ${isDragging ? 'opacity-50' : ''}`}
       {...listeners}  
       {...attributes}
       style={{
@@ -22,7 +22,7 @@ export function DraggableDish({ dish }: DraggableDishProps) {
         backgroundColor: '#dbe4ff',
       }}
     >
-      <div className="font-semibold pointer-events-none">{dish.name}</div>
+      <div className="font-semibold pointer-events-none truncate">{dish.name}</div>
     </div>
   );
 }

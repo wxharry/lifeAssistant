@@ -78,7 +78,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
     <div className="schedule-layout">
       {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+        <div className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
           {isSidebarOpen && <h3 className="text-sm font-bold">Dishes</h3>}
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -89,8 +89,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         </div>
         
         {isSidebarOpen && (
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col">
-            <div className="relative mb-3">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col min-h-0">
+            <div className="relative mb-3 flex-shrink-0">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
               <input 
                 type="text"
@@ -100,7 +100,7 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
                 className="pl-8 w-full text-sm"
               />
             </div>
-            <div className="flex-1 overflow-y-auto flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 content-start">
               {filteredDishes.length === 0 ? (
                 <div className="text-center p-4 text-gray-500 text-xs">
                   No dishes found
