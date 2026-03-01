@@ -386,7 +386,7 @@ function AppContent() {
             } />
           </Route>
         </Routes>
-        <DragOverlay>{renderDragOverlay()}</DragOverlay>
+        <DragOverlay dropAnimation={null}>{renderDragOverlay()}</DragOverlay>
       </DndContext>
     </BrowserRouter>
   );
