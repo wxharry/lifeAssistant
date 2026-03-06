@@ -17,6 +17,7 @@ interface EventEditModalProps {
   onClose: () => void;
   onConfirm: (servings: number, mealType: MealType) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
+  hideDelete?: boolean;
 }
 
 export default function EventEditModal({
@@ -24,7 +25,8 @@ export default function EventEditModal({
   isOpen,
   onClose,
   onConfirm,
-  onDelete
+  onDelete,
+  hideDelete = false,
 }: EventEditModalProps) {
   const [localServings, setLocalServings] = useState(1);
   const [localMealType, setLocalMealType] = useState<MealType>('others');
@@ -136,13 +138,15 @@ export default function EventEditModal({
 
         {/* Footer */}
         <div className="flex gap-2 p-4 border-t border-gray-200">
-          <button
-            onClick={handleDelete}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center justify-center gap-2"
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
+          {!hideDelete && (
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium flex items-center justify-center gap-2"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+          )}
           <div className="flex-1" />
           <button
             onClick={onClose}
