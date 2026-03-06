@@ -154,8 +154,8 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
         initialEndDate={currentDate}
         title="Export"
         items={[
-          { key: 'grocery', label: 'Grocery List', storageKey: 'groceryListName', defaultChecked: true, defaultFormat: 'txt' },
-          { key: 'schedule', label: 'Scheduled Dishes', storageKey: 'scheduledDishesListName', defaultChecked: true, defaultFormat: 'txt' }
+          { key: 'grocery', label: 'Grocery List', storageKey: 'groceryListName', defaultChecked: true, defaultFormat: 'json' },
+          { key: 'schedule', label: 'Scheduled Dishes', storageKey: 'scheduledDishesListName', defaultChecked: true, defaultFormat: 'json' }
         ]}
       />
     </div>
