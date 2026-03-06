@@ -12,6 +12,7 @@ import { useDishes, useSchedule } from './hooks/useSupabaseData';
 import { BackupData } from './utils/exportBackup';
 import { useState } from 'react';
 import { MEAL_COLORS, MEAL_DARK_COLORS } from './components/SchedulerXCalendar';
+import EventEditModal from './components/EventEditModal';
 
 // Initial Data (Mock) - kept for fallback/demo purposes
 const INITIAL_DISHES: Dish[] = [
@@ -60,6 +61,7 @@ function AppContent() {
     | { type: 'event'; dish: Dish; mealType: MealType; servings: number };
 
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [pendingNewEvent, setPendingNewEvent] = useState<{ dish: Dish; day: string } | null>(null);
 
   // Configure sensors for drag detection - require 5px movement before drag starts
   const sensors = useSensors(
@@ -290,28 +292,30 @@ function AppContent() {
     const servings = data.servings || 1;
     const isRescheduling = !!data.isRescheduling;
     
-    // Preserve original mealType when rescheduling; for new adds default to 'others'
-    const mealType: MealType = isRescheduling 
-      ? (data.sourceMealType as MealType)
-      : 'others';
+    // For first-time scheduling: open the edit modal instead of saving immediately
+    if (!isRescheduling) {
+      setPendingNewEvent({ dish, day });
+      return;
+    }
+
+    // Preserve original mealType when rescheduling
+    const mealType: MealType = data.sourceMealType as MealType;
 
     try {
-      if (isRescheduling) {
-        const { sourceDay, sourceMealType, sourceIndex } = data;
-        if (sourceDay === day && sourceMealType === mealType) {
-          return;
-        }
+      const { sourceDay, sourceMealType, sourceIndex } = data;
+      if (sourceDay === day && sourceMealType === mealType) {
+        return;
+      }
 
-        const srcSlot = schedule.find(s => s.date === sourceDay && s.mealType === sourceMealType);
-        if (srcSlot) {
-          const newItems = [...srcSlot.items];
-          newItems.splice(sourceIndex, 1);
+      const srcSlot = schedule.find(s => s.date === sourceDay && s.mealType === sourceMealType);
+      if (srcSlot) {
+        const newItems = [...srcSlot.items];
+        newItems.splice(sourceIndex, 1);
 
-          if (newItems.length === 0) {
-            await deleteScheduleItem(srcSlot.id);
-          } else {
-            await updateScheduleItem({ ...srcSlot, items: newItems });
-          }
+        if (newItems.length === 0) {
+          await deleteScheduleItem(srcSlot.id);
+        } else {
+          await updateScheduleItem({ ...srcSlot, items: newItems });
         }
       }
 
@@ -332,6 +336,30 @@ function AppContent() {
     } catch (error) {
       alert('Failed to update schedule: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
+  };
+
+  const handleNewEventConfirm = async (servings: number, mealType: MealType) => {
+    if (!pendingNewEvent) return;
+    const { dish, day } = pendingNewEvent;
+    const destSlot = schedule.find(s => s.date === day && s.mealType === mealType);
+    if (destSlot) {
+      await updateScheduleItem({
+        ...destSlot,
+        items: [...destSlot.items, { dishId: dish.id, servings }]
+      });
+    } else {
+      await addScheduleItem({
+        id: uuidv4(),
+        date: day,
+        mealType,
+        items: [{ dishId: dish.id, servings }]
+      });
+    }
+    setPendingNewEvent(null);
+  };
+
+  const handleNewEventClose = () => {
+    setPendingNewEvent(null);
   };
 
   const renderDragOverlay = () => {
@@ -387,6 +415,21 @@ function AppContent() {
           </Route>
         </Routes>
         <DragOverlay dropAnimation={null}>{renderDragOverlay()}</DragOverlay>
+        <EventEditModal
+          event={pendingNewEvent ? {
+            day: pendingNewEvent.day,
+            mealType: 'others',
+            dishId: pendingNewEvent.dish.id,
+            dishIndex: 0,
+            servings: 1,
+            dish: { id: pendingNewEvent.dish.id, name: pendingNewEvent.dish.name }
+          } : null}
+          isOpen={pendingNewEvent !== null}
+          onClose={handleNewEventClose}
+          onConfirm={handleNewEventConfirm}
+          onDelete={handleNewEventClose}
+          hideDelete={true}
+        />
       </DndContext>
     </BrowserRouter>
   );
