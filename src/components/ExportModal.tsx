@@ -54,7 +54,8 @@ export default function ExportModal({
   const defaultConfigs = useMemo(() => {
     return items.map(item => {
       const storedListName = localStorage.getItem(item.storageKey) || '';
-      const storedFormat = localStorage.getItem(item.storageKey + '_format') as 'txt' | 'json' | null;
+      const rawFormat = localStorage.getItem(item.storageKey + '_format');
+      const storedFormat: 'txt' | 'json' | null = rawFormat === 'txt' || rawFormat === 'json' ? rawFormat : null;
       const storedChecked = localStorage.getItem(item.storageKey + '_checked');
       return {
         ...item,
@@ -88,8 +89,6 @@ export default function ExportModal({
     }
   }, [isOpen, initialStartDate, initialEndDate, defaultConfigs]);
 
-  if (!isOpen) return null;
-
   const handleRangeChange = useCallback((newRange: DateRange | undefined) => {
     setRange(newRange);
     if (newRange?.from && newRange?.to) {
@@ -97,8 +96,12 @@ export default function ExportModal({
         from: newRange.from.toISOString(),
         to: newRange.to.toISOString()
       }));
+    } else {
+      localStorage.removeItem(RANGE_STORAGE_KEY);
     }
   }, []);
+
+  if (!isOpen) return null;
 
   const handleConfigChange = (key: ExportItemKey, updates: Partial<ExportItemConfig>) => {
     setItemConfigs(prev => {
