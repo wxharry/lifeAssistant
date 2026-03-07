@@ -98,8 +98,6 @@ export default function ExportModal({
       }));
     } else {
       localStorage.removeItem(RANGE_STORAGE_KEY);
-    } else {
-      localStorage.removeItem(RANGE_STORAGE_KEY);
     }
   }, []);
 
