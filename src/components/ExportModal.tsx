@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
@@ -34,6 +34,8 @@ interface ExportModalProps {
   mode?: 'combined';
 }
 
+const RANGE_STORAGE_KEY = 'exportModalDateRange';
+
 export default function ExportModal({ 
   isOpen, 
   onClose, 
@@ -52,10 +54,13 @@ export default function ExportModal({
   const defaultConfigs = useMemo(() => {
     return items.map(item => {
       const storedListName = localStorage.getItem(item.storageKey) || '';
+      const rawFormat = localStorage.getItem(item.storageKey + '_format');
+      const storedFormat: 'txt' | 'json' | null = rawFormat === 'txt' || rawFormat === 'json' ? rawFormat : null;
+      const storedChecked = localStorage.getItem(item.storageKey + '_checked');
       return {
         ...item,
-        checked: item.defaultChecked ?? true,
-        format: item.defaultFormat ?? 'txt',
+        checked: storedChecked !== null ? storedChecked === 'true' : (item.defaultChecked ?? true),
+        format: storedFormat ?? item.defaultFormat ?? 'json',
         listName: storedListName
       };
     });
@@ -63,10 +68,38 @@ export default function ExportModal({
 
   useEffect(() => {
     if (isOpen) {
-      setRange({ from: initialStartDate, to: initialEndDate });
+      const storedRange = localStorage.getItem(RANGE_STORAGE_KEY);
+      if (storedRange) {
+        try {
+          const parsed = JSON.parse(storedRange);
+          const from = new Date(parsed.from);
+          const to = new Date(parsed.to);
+          if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
+            setRange({ from, to });
+          } else {
+            setRange({ from: initialStartDate, to: initialEndDate });
+          }
+        } catch {
+          setRange({ from: initialStartDate, to: initialEndDate });
+        }
+      } else {
+        setRange({ from: initialStartDate, to: initialEndDate });
+      }
       setItemConfigs(defaultConfigs);
     }
   }, [isOpen, initialStartDate, initialEndDate, defaultConfigs]);
+
+  const handleRangeChange = useCallback((newRange: DateRange | undefined) => {
+    setRange(newRange);
+    if (newRange?.from && newRange?.to) {
+      localStorage.setItem(RANGE_STORAGE_KEY, JSON.stringify({
+        from: newRange.from.toISOString(),
+        to: newRange.to.toISOString()
+      }));
+    } else {
+      localStorage.removeItem(RANGE_STORAGE_KEY);
+    }
+  }, []);
 
   if (!isOpen) return null;
 
@@ -77,6 +110,12 @@ export default function ExportModal({
         const next = { ...item, ...updates } as ExportItemConfig;
         if ('listName' in updates) {
           localStorage.setItem(item.storageKey, next.listName);
+        }
+        if ('format' in updates) {
+          localStorage.setItem(item.storageKey + '_format', next.format);
+        }
+        if ('checked' in updates) {
+          localStorage.setItem(item.storageKey + '_checked', String(next.checked));
         }
         return next;
       });
@@ -144,7 +183,7 @@ export default function ExportModal({
                   mode="range"
                   defaultMonth={range?.from}
                   selected={range}
-                  onSelect={setRange}
+                  onSelect={handleRangeChange}
                   numberOfMonths={2}
                 />
               </PopoverContent>
