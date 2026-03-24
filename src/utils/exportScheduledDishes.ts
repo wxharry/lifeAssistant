@@ -32,9 +32,11 @@ export function exportScheduledDishes(
   const items: ScheduledItem[] = [];
 
   // Filter schedule for the selected range
+  // Compare as YYYY-MM-DD strings to avoid UTC vs. local time mismatches
+  const startStr = format(startDate, 'yyyy-MM-dd');
+  const endStr = format(endDate, 'yyyy-MM-dd');
   const rangeSchedule = schedule.filter(slot => {
-    const slotDate = new Date(slot.date);
-    return slotDate >= startDate && slotDate <= endDate;
+    return slot.date >= startStr && slot.date <= endStr;
   });
 
   // Sort by date and meal type
