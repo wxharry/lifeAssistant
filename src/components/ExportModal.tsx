@@ -36,6 +36,12 @@ interface ExportModalProps {
 
 const RANGE_STORAGE_KEY = 'exportModalDateRange';
 
+// Parse a YYYY-MM-DD string as a local midnight Date to avoid UTC timezone shifts
+function parseDateLocal(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export default function ExportModal({ 
   isOpen, 
   onClose, 
@@ -72,8 +78,8 @@ export default function ExportModal({
       if (storedRange) {
         try {
           const parsed = JSON.parse(storedRange);
-          const from = new Date(parsed.from);
-          const to = new Date(parsed.to);
+          const from = parseDateLocal(parsed.from);
+          const to = parseDateLocal(parsed.to);
           if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
             setRange({ from, to });
           } else {
@@ -93,8 +99,8 @@ export default function ExportModal({
     setRange(newRange);
     if (newRange?.from && newRange?.to) {
       localStorage.setItem(RANGE_STORAGE_KEY, JSON.stringify({
-        from: newRange.from.toISOString(),
-        to: newRange.to.toISOString()
+        from: format(newRange.from, 'yyyy-MM-dd'),
+        to: format(newRange.to, 'yyyy-MM-dd')
       }));
     } else {
       localStorage.removeItem(RANGE_STORAGE_KEY);
