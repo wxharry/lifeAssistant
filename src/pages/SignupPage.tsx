@@ -1,49 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../contexts/SupabaseContext';
+import { PASSWORD_MIN_LENGTH } from '../lib/authConfig';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp } = useSupabaseAuth();
 
-  const isDevelopment = import.meta.env.DEV;
-
-  // Hide signup page in production
-  if (!isDevelopment) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Restricted</h1>
-          <p className="text-gray-600 mb-6">
-            Sign up is not available at this time. If you need access, please contact the administrator.
-          </p>
-          <a 
-            href="/login" 
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Go to login
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setFeedback('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setFeedback('Passwords do not match');
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setFeedback(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
       return;
     }
 
@@ -51,10 +30,10 @@ export default function SignupPage() {
 
     try {
       await signUp(email, password);
-      setError('Account created! Check your email to confirm your account.');
-      setTimeout(() => navigate('/login'), 3000);
+      setFeedback('Account created! You can now sign in.');
+      setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setFeedback(err instanceof Error ? err.message : 'Signup failed');
     } finally {
       setLoading(false);
     }
@@ -96,9 +75,9 @@ export default function SignupPage() {
             />
           </div>
 
-          {error && (
-            <div className={error.includes('created') ? 'success-message' : 'error-message'}>
-              {error}
+          {feedback && (
+            <div className={feedback.includes('created') ? 'success-message' : 'error-message'}>
+              {feedback}
             </div>
           )}
 
