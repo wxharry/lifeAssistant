@@ -23,9 +23,19 @@ function getDayOfWeekChinese(date: Date): string {
 
 function getCookReminderDate(slotDate: string, cookStartTime?: string): string | undefined {
   if (!cookStartTime) return undefined;
+  if (!/^\d{2}:\d{2}$/.test(cookStartTime)) return undefined;
 
   const [hours, minutes] = cookStartTime.split(':').map(Number);
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return undefined;
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    minutes < 0 ||
+    hours > 23 ||
+    minutes > 59
+  ) {
+    return undefined;
+  }
 
   const date = new Date(slotDate);
   date.setHours(hours, minutes, 0, 0);

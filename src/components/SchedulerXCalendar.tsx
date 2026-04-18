@@ -57,6 +57,7 @@ interface SchedulerXCalendarProps {
   dishes: Dish[];
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
+  // Also used for cook reminder updates when fromMealType === toMealType
   onChangeMealType?: (
     day: string,
     fromMealType: MealType,
@@ -173,36 +174,32 @@ export default function SchedulerXCalendar({
     const mealTypeChanged = newMealType !== selectedEvent.mealType;
     const cookStartTimeChanged = (newCookStartTime || undefined) !== (selectedEvent.cookStartTime || undefined);
 
-    // If both changed, handle in one operation
-    if ((servingsChanged || cookStartTimeChanged) && mealTypeChanged && onChangeMealType) {
+    if (mealTypeChanged && onChangeMealType) {
       await onChangeMealType(
         selectedEvent.day,
         selectedEvent.mealType,
         newMealType,
         selectedEvent.dishId,
-        newServings,
+        servingsChanged ? newServings : undefined,
         newCookStartTime
       );
-    } else {
-      // Update servings if only servings changed
-      if (servingsChanged) {
-        const delta = newServings - selectedEvent.servings;
-        await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
-      }
+      return;
+    }
 
-      // Update meal type if only meal type changed
-      if (mealTypeChanged && onChangeMealType) {
-        await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId, undefined, newCookStartTime);
-      } else if (cookStartTimeChanged && onChangeMealType) {
-        await onChangeMealType(
-          selectedEvent.day,
-          selectedEvent.mealType,
-          selectedEvent.mealType,
-          selectedEvent.dishId,
-          undefined,
-          newCookStartTime
-        );
-      }
+    if (servingsChanged) {
+      const delta = newServings - selectedEvent.servings;
+      await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
+    }
+
+    if (cookStartTimeChanged && onChangeMealType) {
+      await onChangeMealType(
+        selectedEvent.day,
+        selectedEvent.mealType,
+        selectedEvent.mealType,
+        selectedEvent.dishId,
+        undefined,
+        newCookStartTime
+      );
     }
   }, [selectedEvent, onUpdateServings, onChangeMealType]);
 

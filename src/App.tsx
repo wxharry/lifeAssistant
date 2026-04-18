@@ -210,7 +210,7 @@ function AppContent() {
       if (toSlot) {
         await updateScheduleItem({
           ...toSlot,
-          cookStartTime: normalizedCookStartTime !== undefined ? normalizedCookStartTime : toSlot.cookStartTime,
+          cookStartTime: normalizedCookStartTime ?? toSlot.cookStartTime,
           items: [...toSlot.items, itemToMove]
         });
       } else {
@@ -218,7 +218,7 @@ function AppContent() {
           id: uuidv4(),
           date: day,
           mealType: toMealType,
-          cookStartTime: normalizedCookStartTime !== undefined ? normalizedCookStartTime : fromSlot.cookStartTime,
+          cookStartTime: normalizedCookStartTime ?? fromSlot.cookStartTime,
           items: [itemToMove]
         });
       }
@@ -342,7 +342,7 @@ function AppContent() {
       if (destSlot) {
         await updateScheduleItem({
           ...destSlot,
-          cookStartTime: data.sourceCookStartTime || destSlot.cookStartTime,
+          cookStartTime: data.sourceCookStartTime ?? destSlot.cookStartTime,
           items: [...destSlot.items, { dishId: dish.id, servings }]
         });
       } else {
@@ -350,7 +350,7 @@ function AppContent() {
           id: uuidv4(),
           date: day,
           mealType,
-          cookStartTime: data.sourceCookStartTime || undefined,
+          cookStartTime: data.sourceCookStartTime ?? undefined,
           items: [{ dishId: dish.id, servings }]
         });
       }
@@ -366,7 +366,7 @@ function AppContent() {
     if (destSlot) {
       await updateScheduleItem({
         ...destSlot,
-        cookStartTime: cookStartTime || destSlot.cookStartTime,
+        cookStartTime: cookStartTime ?? destSlot.cookStartTime,
         items: [...destSlot.items, { dishId: dish.id, servings }]
       });
     } else {
@@ -374,7 +374,7 @@ function AppContent() {
         id: uuidv4(),
         date: day,
         mealType,
-        cookStartTime: cookStartTime || undefined,
+        cookStartTime: cookStartTime ?? undefined,
         items: [{ dishId: dish.id, servings }]
       });
     }
