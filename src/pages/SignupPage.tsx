@@ -11,28 +11,6 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const { signUp } = useSupabaseAuth();
 
-  const isDevelopment = import.meta.env.DEV;
-
-  // Hide signup page in production
-  if (!isDevelopment) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Restricted</h1>
-          <p className="text-gray-600 mb-6">
-            Sign up is not available at this time. If you need access, please contact the administrator.
-          </p>
-          <a 
-            href="/login" 
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Go to login
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -51,8 +29,8 @@ export default function SignupPage() {
 
     try {
       await signUp(email, password);
-      setError('Account created! Check your email to confirm your account.');
-      setTimeout(() => navigate('/login'), 3000);
+      setError('Account created! You can now sign in.');
+      setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
     } finally {

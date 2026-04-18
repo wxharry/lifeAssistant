@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { Dish, ScheduleItem } from '../types';
+import {
+  deleteDishForUser,
+  deleteScheduleItemForUser,
+  listDishesByUser,
+  listScheduleByUser,
+  upsertDishForUser,
+  upsertScheduleItemForUser,
+} from '../lib/sqlite';
 
 export function useDishes(userId: string | undefined) {
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -17,13 +24,8 @@ export function useDishes(userId: string | undefined) {
     const fetchDishes = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('dishes')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (error) throw error;
-        setDishes(data || []);
+        const data = await listDishesByUser(userId);
+        setDishes(data);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch dishes');
@@ -34,42 +36,12 @@ export function useDishes(userId: string | undefined) {
     };
 
     fetchDishes();
-
-    // Subscribe to real-time changes
-    const subscription = supabase
-      .channel(`dishes_${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dishes', filter: `user_id=eq.${userId}` }, (payload) => {
-        if (payload.eventType === 'DELETE') {
-          setDishes(prev => prev.filter(d => d.id !== payload.old.id));
-        } else {
-          setDishes(prev => {
-            const idx = prev.findIndex(d => d.id === payload.new.id);
-            if (idx >= 0) {
-              const updated = [...prev];
-              updated[idx] = payload.new;
-              return updated;
-            }
-            return [...prev, payload.new];
-          });
-        }
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [userId]);
 
   const addDish = async (dish: Dish) => {
     if (!userId) throw new Error('User not authenticated');
-    
-    const { data, error } = await supabase
-      .from('dishes')
-      .insert([{ ...dish, user_id: userId }])
-      .select()
-      .single();
 
-    if (error) throw error;
+    const data = await upsertDishForUser(userId, dish);
     setDishes(prev => [...prev, data]);
     return data;
   };
@@ -77,25 +49,15 @@ export function useDishes(userId: string | undefined) {
   const updateDish = async (dish: Dish) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('dishes')
-      .update(dish)
-      .eq('id', dish.id)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    await upsertDishForUser(userId, dish);
+    setDishes(prev => prev.map(existing => (existing.id === dish.id ? dish : existing)));
   };
 
   const deleteDish = async (dishId: string) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('dishes')
-      .delete()
-      .eq('id', dishId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    await deleteDishForUser(userId, dishId);
+    setDishes(prev => prev.filter(existing => existing.id !== dishId));
   };
 
   return { dishes, loading, error, addDish, updateDish, deleteDish };
@@ -116,13 +78,8 @@ export function useSchedule(userId: string | undefined) {
     const fetchSchedule = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('schedule_items')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (error) throw error;
-        setSchedule(data || []);
+        const data = await listScheduleByUser(userId);
+        setSchedule(data);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch schedule');
@@ -133,42 +90,12 @@ export function useSchedule(userId: string | undefined) {
     };
 
     fetchSchedule();
-
-    // Subscribe to real-time changes
-    const subscription = supabase
-      .channel(`schedule_${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedule_items', filter: `user_id=eq.${userId}` }, (payload) => {
-        if (payload.eventType === 'DELETE') {
-          setSchedule(prev => prev.filter(s => s.id !== payload.old.id));
-        } else {
-          setSchedule(prev => {
-            const idx = prev.findIndex(s => s.id === payload.new.id);
-            if (idx >= 0) {
-              const updated = [...prev];
-              updated[idx] = payload.new;
-              return updated;
-            }
-            return [...prev, payload.new];
-          });
-        }
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [userId]);
 
   const addScheduleItem = async (item: ScheduleItem) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('schedule_items')
-      .insert([{ ...item, user_id: userId }])
-      .select()
-      .single();
-
-    if (error) throw error;
+    const data = await upsertScheduleItemForUser(userId, item);
     setSchedule(prev => [...prev, data]);
     return data;
   };
@@ -176,13 +103,7 @@ export function useSchedule(userId: string | undefined) {
   const updateScheduleItem = async (item: ScheduleItem) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('schedule_items')
-      .update(item)
-      .eq('id', item.id)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    await upsertScheduleItemForUser(userId, item);
     
     // Update local state
     setSchedule(prev => {
@@ -199,13 +120,7 @@ export function useSchedule(userId: string | undefined) {
   const deleteScheduleItem = async (itemId: string) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('schedule_items')
-      .delete()
-      .eq('id', itemId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    await deleteScheduleItemForUser(userId, itemId);
     
     // Update local state
     setSchedule(prev => prev.filter(s => s.id !== itemId));
@@ -214,12 +129,16 @@ export function useSchedule(userId: string | undefined) {
   const upsertScheduleItem = async (item: ScheduleItem) => {
     if (!userId) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('schedule_items')
-      .upsert({ ...item, user_id: userId })
-      .eq('id', item.id);
-
-    if (error) throw error;
+    await upsertScheduleItemForUser(userId, item);
+    setSchedule(prev => {
+      const idx = prev.findIndex(s => s.id === item.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = item;
+        return updated;
+      }
+      return [...prev, item];
+    });
   };
 
   return { schedule, loading, error, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem };

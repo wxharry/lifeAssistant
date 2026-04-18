@@ -14,7 +14,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@radix-ui/react-popover": "^1.1.15",
-    "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
@@ -23,6 +22,7 @@
     "react-day-picker": "^9.13.1",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
+    "sql.js": "^1.14.1",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0"
   },
