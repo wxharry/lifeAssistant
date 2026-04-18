@@ -62,6 +62,10 @@ export default function ExportModal({
   const [selectedRegularChecklist, setSelectedRegularChecklist] = useState<Record<string, boolean>>({});
   const [newRegularChecklistItem, setNewRegularChecklistItem] = useState('');
 
+  const isRegularChecklistItemSelected = useCallback((item: string) => {
+    return selectedRegularChecklist[item] ?? true;
+  }, [selectedRegularChecklist]);
+
   const defaultConfigs = useMemo(() => {
     return items.map(item => {
       const storedListName = localStorage.getItem(item.storageKey) || '';
@@ -186,7 +190,7 @@ export default function ExportModal({
       return;
     }
 
-    const selectedRegularChecklistItems = regularChecklistItems.filter(item => selectedRegularChecklist[item] !== false);
+    const selectedRegularChecklistItems = regularChecklistItems.filter(item => isRegularChecklistItemSelected(item));
     onExport(range.from, range.to, itemConfigs, selectedRegularChecklistItems);
     onClose();
   };
@@ -196,7 +200,7 @@ export default function ExportModal({
     if (!trimmed) return;
     const alreadyExists = regularChecklistItems.some(item => item.toLowerCase() === trimmed.toLowerCase());
     if (alreadyExists) {
-      alert('This checklist item already exists.');
+      alert(`The checklist item "${trimmed}" already exists.`);
       return;
     }
     const updated = [...regularChecklistItems, trimmed];
@@ -344,7 +348,7 @@ export default function ExportModal({
                   <div key={item} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={selectedRegularChecklist[item] !== false}
+                      checked={isRegularChecklistItemSelected(item)}
                       onChange={(e) => handleToggleRegularChecklistItem(item, e.target.checked)}
                       className="w-4 h-4 cursor-pointer"
                     />
