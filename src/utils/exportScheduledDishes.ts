@@ -21,6 +21,17 @@ function getDayOfWeekChinese(date: Date): string {
   return dayNames[date.getDay()];
 }
 
+function getCookReminderDate(slotDate: string, cookStartTime?: string): string | undefined {
+  if (!cookStartTime) return undefined;
+
+  const [hours, minutes] = cookStartTime.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return undefined;
+
+  const date = new Date(slotDate);
+  date.setHours(hours, minutes, 0, 0);
+  return date.toISOString();
+}
+
 export function exportScheduledDishes(
   schedule: ScheduleItem[],
   dishes: Dish[],
@@ -75,6 +86,15 @@ export function exportScheduledDishes(
           notes: notes,
           ...(dueDate && { dueDate })
         });
+
+        const cookReminderDate = getCookReminderDate(slot.date, slot.cookStartTime);
+        if (cookReminderDate) {
+          items.push({
+            title: `Start cooking ${dish.name}`,
+            notes: `${notes} (cook reminder)`,
+            dueDate: cookReminderDate
+          });
+        }
       }
     });
   });

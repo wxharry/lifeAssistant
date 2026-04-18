@@ -45,6 +45,7 @@ export const MEAL_DARK_COLORS: Record<MealType,   string> = {
 export interface ScheduleEvent {
   day: string;
   mealType: MealType;
+  cookStartTime?: string;
   dishId: string;
   dishIndex: number;
   servings: number;
@@ -56,7 +57,14 @@ interface SchedulerXCalendarProps {
   dishes: Dish[];
   onRemoveFromSchedule: (day: string, mealType: MealType, dishIndex: number) => Promise<void> | void;
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
-  onChangeMealType?: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => Promise<void> | void;
+  onChangeMealType?: (
+    day: string,
+    fromMealType: MealType,
+    toMealType: MealType,
+    dishId: string,
+    newServings?: number,
+    cookStartTime?: string
+  ) => Promise<void> | void;
   currentDate: Date;
 }
 
@@ -130,6 +138,7 @@ export default function SchedulerXCalendar({
         const event: ScheduleEvent = {
           day: scheduleItem.date,
           mealType: scheduleItem.mealType,
+          cookStartTime: scheduleItem.cookStartTime,
           dishId: item.dishId,
           dishIndex: idx,
           servings: item.servings,
@@ -157,15 +166,23 @@ export default function SchedulerXCalendar({
   }, []);
 
   // Handle modal confirm - save all changes
-  const handleModalConfirm = useCallback(async (newServings: number, newMealType: MealType) => {
+  const handleModalConfirm = useCallback(async (newServings: number, newMealType: MealType, newCookStartTime?: string) => {
     if (!selectedEvent) return;
 
     const servingsChanged = newServings !== selectedEvent.servings;
     const mealTypeChanged = newMealType !== selectedEvent.mealType;
+    const cookStartTimeChanged = (newCookStartTime || undefined) !== (selectedEvent.cookStartTime || undefined);
 
     // If both changed, handle in one operation
-    if (servingsChanged && mealTypeChanged && onChangeMealType) {
-      await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId, newServings);
+    if ((servingsChanged || cookStartTimeChanged) && mealTypeChanged && onChangeMealType) {
+      await onChangeMealType(
+        selectedEvent.day,
+        selectedEvent.mealType,
+        newMealType,
+        selectedEvent.dishId,
+        newServings,
+        newCookStartTime
+      );
     } else {
       // Update servings if only servings changed
       if (servingsChanged) {
@@ -175,7 +192,16 @@ export default function SchedulerXCalendar({
 
       // Update meal type if only meal type changed
       if (mealTypeChanged && onChangeMealType) {
-        await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId);
+        await onChangeMealType(selectedEvent.day, selectedEvent.mealType, newMealType, selectedEvent.dishId, undefined, newCookStartTime);
+      } else if (cookStartTimeChanged && onChangeMealType) {
+        await onChangeMealType(
+          selectedEvent.day,
+          selectedEvent.mealType,
+          selectedEvent.mealType,
+          selectedEvent.dishId,
+          undefined,
+          newCookStartTime
+        );
       }
     }
   }, [selectedEvent, onUpdateServings, onChangeMealType]);

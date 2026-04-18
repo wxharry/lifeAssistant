@@ -168,15 +168,29 @@ function AppContent() {
     }
   };
 
-  const handleChangeMealType = async (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => {
-    if (fromMealType === toMealType) return;
-
+  const handleChangeMealType = async (
+    day: string,
+    fromMealType: MealType,
+    toMealType: MealType,
+    dishId: string,
+    newServings?: number,
+    cookStartTime?: string
+  ) => {
     try {
       const fromSlot = schedule.find(s => s.date === day && s.mealType === fromMealType);
       if (!fromSlot) return;
 
       const itemIdx = fromSlot.items.findIndex(i => i.dishId === dishId);
       if (itemIdx === -1) return;
+
+      const normalizedCookStartTime = cookStartTime || undefined;
+
+      if (fromMealType === toMealType) {
+        if ((fromSlot.cookStartTime || undefined) !== normalizedCookStartTime) {
+          await updateScheduleItem({ ...fromSlot, cookStartTime: normalizedCookStartTime });
+        }
+        return;
+      }
 
       const item = fromSlot.items[itemIdx];
       // Update servings if provided
@@ -194,12 +208,17 @@ function AppContent() {
       // Add to destination slot with updated servings
       const toSlot = schedule.find(s => s.date === day && s.mealType === toMealType);
       if (toSlot) {
-        await updateScheduleItem({ ...toSlot, items: [...toSlot.items, itemToMove] });
+        await updateScheduleItem({
+          ...toSlot,
+          cookStartTime: normalizedCookStartTime !== undefined ? normalizedCookStartTime : toSlot.cookStartTime,
+          items: [...toSlot.items, itemToMove]
+        });
       } else {
         await addScheduleItem({
           id: uuidv4(),
           date: day,
           mealType: toMealType,
+          cookStartTime: normalizedCookStartTime !== undefined ? normalizedCookStartTime : fromSlot.cookStartTime,
           items: [itemToMove]
         });
       }
@@ -323,6 +342,7 @@ function AppContent() {
       if (destSlot) {
         await updateScheduleItem({
           ...destSlot,
+          cookStartTime: data.sourceCookStartTime || destSlot.cookStartTime,
           items: [...destSlot.items, { dishId: dish.id, servings }]
         });
       } else {
@@ -330,6 +350,7 @@ function AppContent() {
           id: uuidv4(),
           date: day,
           mealType,
+          cookStartTime: data.sourceCookStartTime || undefined,
           items: [{ dishId: dish.id, servings }]
         });
       }
@@ -338,13 +359,14 @@ function AppContent() {
     }
   };
 
-  const handleNewEventConfirm = async (servings: number, mealType: MealType) => {
+  const handleNewEventConfirm = async (servings: number, mealType: MealType, cookStartTime?: string) => {
     if (!pendingNewEvent) return;
     const { dish, day } = pendingNewEvent;
     const destSlot = schedule.find(s => s.date === day && s.mealType === mealType);
     if (destSlot) {
       await updateScheduleItem({
         ...destSlot,
+        cookStartTime: cookStartTime || destSlot.cookStartTime,
         items: [...destSlot.items, { dishId: dish.id, servings }]
       });
     } else {
@@ -352,6 +374,7 @@ function AppContent() {
         id: uuidv4(),
         date: day,
         mealType,
+        cookStartTime: cookStartTime || undefined,
         items: [{ dishId: dish.id, servings }]
       });
     }
@@ -419,6 +442,7 @@ function AppContent() {
           event={pendingNewEvent ? {
             day: pendingNewEvent.day,
             mealType: 'others',
+            cookStartTime: undefined,
             dishId: pendingNewEvent.dish.id,
             dishIndex: 0,
             servings: 1,

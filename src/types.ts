@@ -20,6 +20,7 @@ export interface ScheduleItem {
   id: string;
   date: string; // YYYY-MM-DD
   mealType: MealType;
+  cookStartTime?: string; // HH:mm, optional reminder time to start cooking
   items: { dishId: string; servings: number }[];
 }
 

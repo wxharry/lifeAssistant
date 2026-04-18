@@ -5,6 +5,7 @@ import { MealType, MEAL_TYPES } from '../types';
 interface ScheduleEvent {
   day: string;
   mealType: MealType;
+  cookStartTime?: string;
   dishId: string;
   dishIndex: number;
   servings: number;
@@ -15,7 +16,7 @@ interface EventEditModalProps {
   event: ScheduleEvent | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (servings: number, mealType: MealType) => Promise<void> | void;
+  onConfirm: (servings: number, mealType: MealType, cookStartTime?: string) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
   hideDelete?: boolean;
 }
@@ -30,12 +31,14 @@ export default function EventEditModal({
 }: EventEditModalProps) {
   const [localServings, setLocalServings] = useState(1);
   const [localMealType, setLocalMealType] = useState<MealType>('others');
+  const [localCookStartTime, setLocalCookStartTime] = useState('');
 
   // Initialize local state when modal opens or event changes
   useEffect(() => {
     if (isOpen && event) {
       setLocalServings(event.servings);
       setLocalMealType(event.mealType);
+      setLocalCookStartTime(event.cookStartTime || '');
     }
   }, [isOpen, event]);
 
@@ -51,7 +54,7 @@ export default function EventEditModal({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(localServings, localMealType);
+      await onConfirm(localServings, localMealType, localCookStartTime || undefined);
       onClose();
     } catch (error) {
       alert('Failed to save changes: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -133,6 +136,17 @@ export default function EventEditModal({
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-700">Date</label>
             <p className="text-gray-600 text-sm">{event.day}</p>
+          </div>
+
+          {/* Cook Start Time */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">Start Cooking Reminder (Optional)</label>
+            <input
+              type="time"
+              value={localCookStartTime}
+              onChange={(e) => setLocalCookStartTime(e.target.value)}
+              className="w-full p-2 rounded-lg border border-gray-300 text-sm"
+            />
           </div>
         </div>
 
