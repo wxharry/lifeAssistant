@@ -20,7 +20,8 @@ export function exportGroceryList(
   startDate: Date,
   endDate: Date,
   exportFormat: 'txt' | 'json' = 'txt',
-  listName?: string
+  listName?: string,
+  regularChecklistItems: string[] = []
 ) {
   const items: Record<string, ItemWithDishes> = {};
 
@@ -64,14 +65,18 @@ export function exportGroceryList(
 
   const sortedItems = Object.values(items).sort((a, b) => a.name.localeCompare(b.name));
 
+  const normalizedRegularChecklistItems = regularChecklistItems
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+
   if (exportFormat === 'json') {
-    exportAsJSON(sortedItems, listName || 'Grocery List');
+    exportAsJSON(sortedItems, listName || 'Grocery List', normalizedRegularChecklistItems);
   } else {
-    exportAsText(sortedItems, startDate, endDate);
+    exportAsText(sortedItems, startDate, endDate, normalizedRegularChecklistItems);
   }
 }
 
-function exportAsText(items: ItemWithDishes[], startDate: Date, endDate: Date) {
+function exportAsText(items: ItemWithDishes[], startDate: Date, endDate: Date, regularChecklistItems: string[]) {
   let content = `Grocery List\n`;
   content += `Range: ${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}\n`;
   content += `Generated on: ${format(new Date(), 'MMM d, yyyy HH:mm')}\n\n`;
@@ -89,17 +94,30 @@ function exportAsText(items: ItemWithDishes[], startDate: Date, endDate: Date) {
     });
   }
 
+  if (regularChecklistItems.length > 0) {
+    content += `\nRegular Checklist\n`;
+    regularChecklistItems.forEach(item => {
+      content += `[ ] ${item}\n`;
+    });
+  }
+
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   saveAs(blob, `grocery-list-${format(startDate, 'yyyyMMdd')}-${format(endDate, 'yyyyMMdd')}.txt`);
 }
 
-function exportAsJSON(items: ItemWithDishes[], listName: string) {
-  const groceryItems: GroceryItem[] = items.map(item => ({
+function exportAsJSON(items: ItemWithDishes[], listName: string, regularChecklistItems: string[]) {
+  const groceryItems: GroceryItem[] = [
+    ...items.map(item => ({
     title: item.name,
     notes: `${item.amount > 0 ? Number(item.amount.toFixed(2)) + ' ' + item.unit : item.unit} - ${Object.entries(item.dishes)
       .map(([name, servings]) => `${name}(${servings})`)
       .join(', ')}`
-  }));
+    })),
+    ...regularChecklistItems.map(item => ({
+      title: item,
+      notes: 'Regular checklist item'
+    }))
+  ];
 
   const jsonData = {
     listName,

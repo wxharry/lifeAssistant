@@ -37,11 +37,11 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
     setIsExportOpen(true);
   };
 
-  const handleExportConfirm = (start: Date, end: Date, items: ExportItemConfig[]) => {
+  const handleExportConfirm = (start: Date, end: Date, items: ExportItemConfig[], selectedRegularChecklistItems: string[]) => {
     items.forEach(item => {
       if (!item.checked) return;
       if (item.key === 'grocery') {
-        exportGroceryList(schedule, dishes, start, end, item.format, item.listName || undefined);
+        exportGroceryList(schedule, dishes, start, end, item.format, item.listName || undefined, selectedRegularChecklistItems);
       }
       if (item.key === 'schedule') {
         exportScheduledDishes(schedule, dishes, start, end, item.format, item.listName || undefined);
