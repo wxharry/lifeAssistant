@@ -1,13 +1,22 @@
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { Dish, ScheduleItem } from '../types';
+import { PASSWORD_MIN_LENGTH } from './authConfig';
 
 const DB_STORAGE_KEY = 'lifeassistant.sqlite.v1';
 const SESSION_STORAGE_KEY = 'lifeassistant.session.v1';
+const PASSWORD_ITERATIONS = 600000;
+const PASSWORD_HASH_BITS = 256;
+const PASSWORD_SALT_BYTES = 16;
+const BASE64_CHUNK_SIZE = 0x8000;
 
 export interface LocalUser {
   id: string;
   email: string;
+}
+
+interface UserRecord extends LocalUser {
+  password_hash: string;
 }
 
 let sqlJsPromise: Promise<SqlJsStatic> | null = null;
@@ -15,10 +24,9 @@ let dbPromise: Promise<Database> | null = null;
 
 function toBase64(bytes: Uint8Array): string {
   let binary = '';
-  const chunkSize = 0x8000;
 
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
+  for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + BASE64_CHUNK_SIZE);
     binary += String.fromCharCode(...chunk);
   }
 
@@ -93,10 +101,10 @@ function persistDb(db: Database): void {
   localStorage.setItem(DB_STORAGE_KEY, toBase64(exported));
 }
 
-function mapSingleTextColumnResult(rows: unknown[]): string[] {
+function extractStringColumn(rows: unknown[], columnName: string): string[] {
   return rows
     .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
-    .map((row) => Object.values(row)[0])
+    .map((row) => row[columnName])
     .filter((value): value is string => typeof value === 'string');
 }
 
@@ -122,19 +130,36 @@ function writeSession(user: LocalUser | null): void {
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
 }
 
-async function hashPassword(password: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(`${salt}:${password}`);
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  return toBase64(new Uint8Array(digest));
+function isValidEmail(email: string): boolean {
+  if (email.includes('..')) return false;
+  if (email.split('@').length !== 2) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-async function findUserByEmail(email: string): Promise<{ id: string; email: string; password_hash: string } | null> {
+async function hashPassword(password: string, salt: Uint8Array): Promise<string> {
+  const encoder = new TextEncoder();
+  const passwordBytes = encoder.encode(password);
+  const key = await crypto.subtle.importKey('raw', passwordBytes, 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      hash: 'SHA-256',
+      salt,
+      iterations: PASSWORD_ITERATIONS,
+    },
+    key,
+    PASSWORD_HASH_BITS
+  );
+
+  return toBase64(new Uint8Array(bits));
+}
+
+async function findUserByEmail(email: string): Promise<UserRecord | null> {
   const db = await getDb();
   const stmt = db.prepare('SELECT id, email, password_hash FROM users WHERE email = ?');
   stmt.bind([email.toLowerCase()]);
 
-  let user: { id: string; email: string; password_hash: string } | null = null;
+  let user: UserRecord | null = null;
   if (stmt.step()) {
     const row = stmt.getAsObject();
     user = {
@@ -155,15 +180,19 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
 export async function signUpWithPassword(email: string, password: string): Promise<void> {
   const normalizedEmail = email.toLowerCase().trim();
   if (!normalizedEmail) throw new Error('Email is required');
-  if (password.length < 6) throw new Error('Password must be at least 6 characters');
+  if (!isValidEmail(normalizedEmail)) throw new Error('Please enter a valid email address');
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    throw new Error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+  }
 
   const existing = await findUserByEmail(normalizedEmail);
   if (existing) throw new Error('An account with this email already exists');
 
   const db = await getDb();
   const id = crypto.randomUUID();
-  const salt = toBase64(crypto.getRandomValues(new Uint8Array(16)));
-  const passwordHash = await hashPassword(password, salt);
+  const saltBytes = crypto.getRandomValues(new Uint8Array(PASSWORD_SALT_BYTES));
+  const salt = toBase64(saltBytes);
+  const passwordHash = await hashPassword(password, saltBytes);
 
   db.run('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)', [id, normalizedEmail, `${salt}:${passwordHash}`]);
   persistDb(db);
@@ -175,9 +204,12 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (!user) throw new Error('Invalid email or password');
 
   const [salt, storedHash] = user.password_hash.split(':');
-  if (!salt || !storedHash) throw new Error('Invalid email or password');
+  if (!salt || !storedHash) {
+    console.error(`Invalid stored password hash format for user ${user.id}`);
+    throw new Error('Invalid email or password');
+  }
 
-  const passwordHash = await hashPassword(password, salt);
+  const passwordHash = await hashPassword(password, fromBase64(salt));
   if (storedHash !== passwordHash) throw new Error('Invalid email or password');
 
   const sessionUser: LocalUser = { id: user.id, email: user.email };
@@ -199,7 +231,7 @@ export async function listDishesByUser(userId: string): Promise<Dish[]> {
   }
   stmt.free();
 
-  return mapSingleTextColumnResult(rows).map((data) => JSON.parse(data) as Dish);
+  return extractStringColumn(rows, 'data').map((data) => JSON.parse(data) as Dish);
 }
 
 export async function upsertDishForUser(userId: string, dish: Dish): Promise<Dish> {
@@ -237,7 +269,7 @@ export async function listScheduleByUser(userId: string): Promise<ScheduleItem[]
   }
   stmt.free();
 
-  return mapSingleTextColumnResult(rows).map((data) => JSON.parse(data) as ScheduleItem);
+  return extractStringColumn(rows, 'data').map((data) => JSON.parse(data) as ScheduleItem);
 }
 
 export async function upsertScheduleItemForUser(userId: string, item: ScheduleItem): Promise<ScheduleItem> {

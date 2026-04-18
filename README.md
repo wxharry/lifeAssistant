@@ -12,6 +12,9 @@ Life Assistant is a web application designed to simplify your daily meal plannin
 - **Backup and restore** — export your data as a JSON backup and restore it at any time.
 
 Authentication and data storage are handled locally in the browser using SQLite.
+Data is stored in browser local storage, so treat this app as single-device local storage and avoid running untrusted scripts in the same browser context.
+If browser storage is cleared, data is lost unless you exported a backup.
+Passwords are hashed before storage, but all account/data records remain local to the same browser profile and do not sync across devices.
 
 ## Tech Stack
 

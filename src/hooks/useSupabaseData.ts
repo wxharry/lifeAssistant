@@ -42,7 +42,10 @@ export function useDishes(userId: string | undefined) {
     if (!userId) throw new Error('User not authenticated');
 
     const data = await upsertDishForUser(userId, dish);
-    setDishes(prev => [...prev, data]);
+    setDishes(prev => {
+      const exists = prev.some(existing => existing.id === data.id);
+      return exists ? prev.map(existing => (existing.id === data.id ? data : existing)) : [...prev, data];
+    });
     return data;
   };
 
@@ -96,7 +99,10 @@ export function useSchedule(userId: string | undefined) {
     if (!userId) throw new Error('User not authenticated');
 
     const data = await upsertScheduleItemForUser(userId, item);
-    setSchedule(prev => [...prev, data]);
+    setSchedule(prev => {
+      const exists = prev.some(existing => existing.id === data.id);
+      return exists ? prev.map(existing => (existing.id === data.id ? data : existing)) : [...prev, data];
+    });
     return data;
   };
 
