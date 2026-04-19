@@ -185,17 +185,26 @@ function AppContent() {
       if (itemIdx === -1) return;
 
       if (fromMealType === toMealType) {
+        const currentItem = fromSlot.items[itemIdx];
+        const nextPrepReminderEnabled = prepReminderEnabled ?? currentItem.prepReminderEnabled ?? false;
+        const nextPrepReminderDaysBefore = prepReminderDaysBefore ?? currentItem.prepReminderDaysBefore ?? 1;
+        const prepReminderChanged =
+          (currentItem.prepReminderEnabled ?? false) !== nextPrepReminderEnabled ||
+          (currentItem.prepReminderDaysBefore ?? 1) !== nextPrepReminderDaysBefore;
+
+        if (!prepReminderChanged) {
+          return;
+        }
+
         const updatedItems = fromSlot.items.map((item, idx) => {
           if (idx !== itemIdx) return item;
           return {
             ...item,
-            prepReminderEnabled: prepReminderEnabled ?? item.prepReminderEnabled ?? false,
-            prepReminderDaysBefore: prepReminderDaysBefore ?? item.prepReminderDaysBefore ?? 1
+            prepReminderEnabled: nextPrepReminderEnabled,
+            prepReminderDaysBefore: nextPrepReminderDaysBefore
           };
         });
-        if (JSON.stringify(updatedItems[itemIdx]) !== JSON.stringify(fromSlot.items[itemIdx])) {
-          await updateScheduleItem({ ...fromSlot, items: updatedItems });
-        }
+        await updateScheduleItem({ ...fromSlot, items: updatedItems });
         return;
       }
 

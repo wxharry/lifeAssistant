@@ -62,7 +62,7 @@ export default function EventEditModal({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(localServings, localMealType, localPrepReminderEnabled, Math.max(1, localPrepReminderDaysBefore || 1));
+      await onConfirm(localServings, localMealType, localPrepReminderEnabled, Math.max(1, localPrepReminderDaysBefore));
       onClose();
     } catch (error) {
       alert('Failed to save changes: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -164,7 +164,7 @@ export default function EventEditModal({
                   min={1}
                   required
                   value={localPrepReminderDaysBefore}
-                  onChange={(e) => setLocalPrepReminderDaysBefore(Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) => setLocalPrepReminderDaysBefore(Math.max(1, Number(e.target.value) || 0))}
                   className="w-24 p-2 rounded-lg border border-gray-300 text-sm"
                 />
                 <span className="text-sm text-gray-600">day(s) before</span>

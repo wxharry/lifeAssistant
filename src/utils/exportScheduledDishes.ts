@@ -94,7 +94,7 @@ export function exportScheduledDishes(
         });
 
         const preparingReminderEnabled = item.prepReminderEnabled ?? dish.prepReminderEnabled ?? false;
-        const preparingReminderDaysBefore = Math.max(1, item.prepReminderDaysBefore ?? 1);
+        const preparingReminderDaysBefore = item.prepReminderDaysBefore ?? 1;
         const preparingReminderDate = preparingReminderEnabled
           ? getPreparingReminderDate(slot.date, slot.mealType, preparingReminderDaysBefore)
           : undefined;
