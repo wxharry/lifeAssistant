@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
 import { X, Plus, Minus, Trash2, Check } from 'lucide-react';
-import { MealType, MEAL_TYPES } from '../types';
+import { Dish, MealType, MEAL_TYPES } from '../types';
 
 interface ScheduleEvent {
   day: string;
   mealType: MealType;
-  cookStartTime?: string;
+  prepReminderEnabled?: boolean;
+  prepReminderDaysBefore?: number;
   dishId: string;
   dishIndex: number;
   servings: number;
-  dish: { id: string; name: string };
+  dish: Dish;
 }
 
 interface EventEditModalProps {
   event: ScheduleEvent | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (servings: number, mealType: MealType, cookStartTime?: string) => Promise<void> | void;
+  onConfirm: (
+    servings: number,
+    mealType: MealType,
+    prepReminderEnabled: boolean,
+    prepReminderDaysBefore: number
+  ) => Promise<void> | void;
   onDelete: () => Promise<void> | void;
   hideDelete?: boolean;
 }
@@ -31,14 +37,16 @@ export default function EventEditModal({
 }: EventEditModalProps) {
   const [localServings, setLocalServings] = useState(1);
   const [localMealType, setLocalMealType] = useState<MealType>('others');
-  const [localCookStartTime, setLocalCookStartTime] = useState('');
+  const [localPrepReminderEnabled, setLocalPrepReminderEnabled] = useState(false);
+  const [localPrepReminderDaysBefore, setLocalPrepReminderDaysBefore] = useState(1);
 
   // Initialize local state when modal opens or event changes
   useEffect(() => {
     if (isOpen && event) {
       setLocalServings(event.servings);
       setLocalMealType(event.mealType);
-      setLocalCookStartTime(event.cookStartTime || '');
+      setLocalPrepReminderEnabled(event.prepReminderEnabled ?? event.dish.prepReminderEnabled ?? false);
+      setLocalPrepReminderDaysBefore(event.prepReminderDaysBefore ?? 1);
     }
   }, [isOpen, event]);
 
@@ -54,7 +62,7 @@ export default function EventEditModal({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(localServings, localMealType, localCookStartTime || undefined);
+      await onConfirm(localServings, localMealType, localPrepReminderEnabled, Math.max(1, localPrepReminderDaysBefore || 1));
       onClose();
     } catch (error) {
       alert('Failed to save changes: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -138,15 +146,30 @@ export default function EventEditModal({
             <p className="text-gray-600 text-sm">{event.day}</p>
           </div>
 
-          {/* Cook Start Time */}
+          {/* Preparing Reminder */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">Start Cooking Reminder (Optional)</label>
-            <input
-              type="time"
-              value={localCookStartTime}
-              onChange={(e) => setLocalCookStartTime(e.target.value)}
-              className="w-full p-2 rounded-lg border border-gray-300 text-sm"
-            />
+            <label className="block text-sm font-semibold text-gray-700">Preparing Reminder</label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={localPrepReminderEnabled}
+                onChange={(e) => setLocalPrepReminderEnabled(e.target.checked)}
+              />
+              Enable for this schedule
+            </label>
+            {localPrepReminderEnabled && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={localPrepReminderDaysBefore}
+                  onChange={(e) => setLocalPrepReminderDaysBefore(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-24 p-2 rounded-lg border border-gray-300 text-sm"
+                />
+                <span className="text-sm text-gray-600">day(s) before</span>
+              </div>
+            )}
           </div>
         </div>
 

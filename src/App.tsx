@@ -174,7 +174,8 @@ function AppContent() {
     toMealType: MealType,
     dishId: string,
     newServings?: number,
-    cookStartTime?: string
+    prepReminderEnabled?: boolean,
+    prepReminderDaysBefore?: number
   ) => {
     try {
       const fromSlot = schedule.find(s => s.date === day && s.mealType === fromMealType);
@@ -183,18 +184,29 @@ function AppContent() {
       const itemIdx = fromSlot.items.findIndex(i => i.dishId === dishId);
       if (itemIdx === -1) return;
 
-      const normalizedCookStartTime = cookStartTime || undefined;
-
       if (fromMealType === toMealType) {
-        if ((fromSlot.cookStartTime || undefined) !== normalizedCookStartTime) {
-          await updateScheduleItem({ ...fromSlot, cookStartTime: normalizedCookStartTime });
+        const updatedItems = fromSlot.items.map((item, idx) => {
+          if (idx !== itemIdx) return item;
+          return {
+            ...item,
+            prepReminderEnabled: prepReminderEnabled ?? item.prepReminderEnabled ?? false,
+            prepReminderDaysBefore: prepReminderDaysBefore ?? item.prepReminderDaysBefore ?? 1
+          };
+        });
+        if (JSON.stringify(updatedItems[itemIdx]) !== JSON.stringify(fromSlot.items[itemIdx])) {
+          await updateScheduleItem({ ...fromSlot, items: updatedItems });
         }
         return;
       }
 
       const item = fromSlot.items[itemIdx];
       // Update servings if provided
-      const itemToMove = newServings !== undefined ? { ...item, servings: newServings } : item;
+      const itemToMove = {
+        ...item,
+        ...(newServings !== undefined ? { servings: newServings } : {}),
+        prepReminderEnabled: prepReminderEnabled ?? item.prepReminderEnabled ?? false,
+        prepReminderDaysBefore: prepReminderDaysBefore ?? item.prepReminderDaysBefore ?? 1
+      };
       const newFromItems = [...fromSlot.items];
       newFromItems.splice(itemIdx, 1);
 
@@ -210,7 +222,6 @@ function AppContent() {
       if (toSlot) {
         await updateScheduleItem({
           ...toSlot,
-          cookStartTime: normalizedCookStartTime ?? toSlot.cookStartTime,
           items: [...toSlot.items, itemToMove]
         });
       } else {
@@ -218,7 +229,6 @@ function AppContent() {
           id: uuidv4(),
           date: day,
           mealType: toMealType,
-          cookStartTime: normalizedCookStartTime ?? fromSlot.cookStartTime,
           items: [itemToMove]
         });
       }
@@ -342,16 +352,27 @@ function AppContent() {
       if (destSlot) {
         await updateScheduleItem({
           ...destSlot,
-          cookStartTime: data.sourceCookStartTime ?? destSlot.cookStartTime,
-          items: [...destSlot.items, { dishId: dish.id, servings }]
+          items: [
+            ...destSlot.items,
+            {
+              dishId: dish.id,
+              servings,
+              prepReminderEnabled: data.sourcePrepReminderEnabled ?? false,
+              prepReminderDaysBefore: data.sourcePrepReminderDaysBefore ?? 1
+            }
+          ]
         });
       } else {
         await addScheduleItem({
           id: uuidv4(),
           date: day,
           mealType,
-          cookStartTime: data.sourceCookStartTime ?? undefined,
-          items: [{ dishId: dish.id, servings }]
+          items: [{
+            dishId: dish.id,
+            servings,
+            prepReminderEnabled: data.sourcePrepReminderEnabled ?? false,
+            prepReminderDaysBefore: data.sourcePrepReminderDaysBefore ?? 1
+          }]
         });
       }
     } catch (error) {
@@ -359,23 +380,39 @@ function AppContent() {
     }
   };
 
-  const handleNewEventConfirm = async (servings: number, mealType: MealType, cookStartTime?: string) => {
+  const handleNewEventConfirm = async (
+    servings: number,
+    mealType: MealType,
+    prepReminderEnabled: boolean,
+    prepReminderDaysBefore: number
+  ) => {
     if (!pendingNewEvent) return;
     const { dish, day } = pendingNewEvent;
     const destSlot = schedule.find(s => s.date === day && s.mealType === mealType);
     if (destSlot) {
       await updateScheduleItem({
         ...destSlot,
-        cookStartTime: cookStartTime ?? destSlot.cookStartTime,
-        items: [...destSlot.items, { dishId: dish.id, servings }]
+        items: [
+          ...destSlot.items,
+          {
+            dishId: dish.id,
+            servings,
+            prepReminderEnabled,
+            prepReminderDaysBefore
+          }
+        ]
       });
     } else {
       await addScheduleItem({
         id: uuidv4(),
         date: day,
         mealType,
-        cookStartTime: cookStartTime ?? undefined,
-        items: [{ dishId: dish.id, servings }]
+        items: [{
+          dishId: dish.id,
+          servings,
+          prepReminderEnabled,
+          prepReminderDaysBefore
+        }]
       });
     }
     setPendingNewEvent(null);
@@ -442,11 +479,12 @@ function AppContent() {
           event={pendingNewEvent ? {
             day: pendingNewEvent.day,
             mealType: 'others',
-            cookStartTime: undefined,
+            prepReminderEnabled: pendingNewEvent.dish.prepReminderEnabled ?? false,
+            prepReminderDaysBefore: 1,
             dishId: pendingNewEvent.dish.id,
             dishIndex: 0,
             servings: 1,
-            dish: { id: pendingNewEvent.dish.id, name: pendingNewEvent.dish.name }
+            dish: pendingNewEvent.dish
           } : null}
           isOpen={pendingNewEvent !== null}
           onClose={handleNewEventClose}

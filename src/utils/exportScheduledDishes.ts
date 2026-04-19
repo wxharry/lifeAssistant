@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { ScheduleItem, Dish, MealType } from '../types';
 
 interface ScheduledItem {
@@ -21,25 +21,21 @@ function getDayOfWeekChinese(date: Date): string {
   return dayNames[date.getDay()];
 }
 
-function getCookReminderDate(slotDate: string, cookStartTime?: string): string | undefined {
-  if (!cookStartTime) return undefined;
-  if (!/^\d{2}:\d{2}$/.test(cookStartTime)) return undefined;
+function getPreparingReminderDate(slotDate: string, mealType: MealType, daysBefore: number): string | undefined {
+  if (daysBefore < 1) return undefined;
 
-  const [hours, minutes] = cookStartTime.split(':').map(Number);
-  if (
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes) ||
-    hours < 0 ||
-    minutes < 0 ||
-    hours > 23 ||
-    minutes > 59
-  ) {
-    return undefined;
+  const prepDate = subDays(new Date(slotDate), daysBefore);
+  if (mealType === 'lunch') {
+    prepDate.setHours(8, 0, 0, 0);
+    return prepDate.toISOString();
   }
 
-  const date = new Date(slotDate);
-  date.setHours(hours, minutes, 0, 0);
-  return date.toISOString();
+  if (mealType === 'dinner') {
+    prepDate.setHours(17, 0, 0, 0);
+    return prepDate.toISOString();
+  }
+
+  return undefined;
 }
 
 export function exportScheduledDishes(
@@ -97,12 +93,17 @@ export function exportScheduledDishes(
           ...(dueDate && { dueDate })
         });
 
-        const cookReminderDate = getCookReminderDate(slot.date, slot.cookStartTime);
-        if (cookReminderDate) {
+        const preparingReminderEnabled = item.prepReminderEnabled ?? dish.prepReminderEnabled ?? false;
+        const preparingReminderDaysBefore = Math.max(1, item.prepReminderDaysBefore ?? 1);
+        const preparingReminderDate = preparingReminderEnabled
+          ? getPreparingReminderDate(slot.date, slot.mealType, preparingReminderDaysBefore)
+          : undefined;
+
+        if (preparingReminderDate) {
           items.push({
-            title: `Start cooking ${dish.name}`,
-            notes: `${notes} (cook reminder)`,
-            dueDate: cookReminderDate
+            title: `Preparing Reminder: ${dish.name}`,
+            notes: `${notes} (${preparingReminderDaysBefore} day(s) before)`,
+            dueDate: preparingReminderDate
           });
         }
       }

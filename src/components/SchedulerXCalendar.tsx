@@ -45,7 +45,8 @@ export const MEAL_DARK_COLORS: Record<MealType,   string> = {
 export interface ScheduleEvent {
   day: string;
   mealType: MealType;
-  cookStartTime?: string;
+  prepReminderEnabled?: boolean;
+  prepReminderDaysBefore?: number;
   dishId: string;
   dishIndex: number;
   servings: number;
@@ -64,7 +65,8 @@ interface SchedulerXCalendarProps {
     toMealType: MealType,
     dishId: string,
     newServings?: number,
-    cookStartTime?: string
+    prepReminderEnabled?: boolean,
+    prepReminderDaysBefore?: number
   ) => Promise<void> | void;
   currentDate: Date;
 }
@@ -139,7 +141,8 @@ export default function SchedulerXCalendar({
         const event: ScheduleEvent = {
           day: scheduleItem.date,
           mealType: scheduleItem.mealType,
-          cookStartTime: scheduleItem.cookStartTime,
+          prepReminderEnabled: item.prepReminderEnabled,
+          prepReminderDaysBefore: item.prepReminderDaysBefore,
           dishId: item.dishId,
           dishIndex: idx,
           servings: item.servings,
@@ -167,12 +170,21 @@ export default function SchedulerXCalendar({
   }, []);
 
   // Handle modal confirm - save all changes
-  const handleModalConfirm = useCallback(async (newServings: number, newMealType: MealType, newCookStartTime?: string) => {
+  const handleModalConfirm = useCallback(
+    async (
+      newServings: number,
+      newMealType: MealType,
+      newPrepReminderEnabled: boolean,
+      newPrepReminderDaysBefore: number
+    ) => {
     if (!selectedEvent) return;
 
     const servingsChanged = newServings !== selectedEvent.servings;
     const mealTypeChanged = newMealType !== selectedEvent.mealType;
-    const cookStartTimeChanged = (newCookStartTime || undefined) !== (selectedEvent.cookStartTime || undefined);
+    const prepReminderEnabledChanged =
+      newPrepReminderEnabled !== (selectedEvent.prepReminderEnabled ?? selectedEvent.dish.prepReminderEnabled ?? false);
+    const prepReminderDaysBeforeChanged =
+      newPrepReminderDaysBefore !== (selectedEvent.prepReminderDaysBefore ?? 1);
 
     if (mealTypeChanged && onChangeMealType) {
       await onChangeMealType(
@@ -181,7 +193,8 @@ export default function SchedulerXCalendar({
         newMealType,
         selectedEvent.dishId,
         servingsChanged ? newServings : undefined,
-        newCookStartTime
+        newPrepReminderEnabled,
+        newPrepReminderDaysBefore
       );
       return;
     }
@@ -191,14 +204,15 @@ export default function SchedulerXCalendar({
       await onUpdateServings(selectedEvent.day, selectedEvent.mealType, selectedEvent.dishId, delta);
     }
 
-    if (cookStartTimeChanged && onChangeMealType) {
+    if ((prepReminderEnabledChanged || prepReminderDaysBeforeChanged) && onChangeMealType) {
       await onChangeMealType(
         selectedEvent.day,
         selectedEvent.mealType,
         selectedEvent.mealType,
         selectedEvent.dishId,
         undefined,
-        newCookStartTime
+        newPrepReminderEnabled,
+        newPrepReminderDaysBefore
       );
     }
   }, [selectedEvent, onUpdateServings, onChangeMealType]);

@@ -21,7 +21,8 @@ interface SchedulePageProps {
     toMealType: MealType,
     dishId: string,
     newServings?: number,
-    cookStartTime?: string
+    prepReminderEnabled?: boolean,
+    prepReminderDaysBefore?: number
   ) => Promise<void> | void;
   onRestoreBackup: (backup: BackupData) => Promise<void>;
 }
