@@ -266,7 +266,10 @@ export function useChecklistItems(userId: string | undefined) {
         if (payload.eventType === 'DELETE') {
           setChecklistItems(prev => prev.filter(c => c.id !== payload.old.id));
         } else if (payload.eventType === 'INSERT') {
-          setChecklistItems(prev => [...prev, { id: payload.new.id, name: payload.new.name }]);
+          setChecklistItems(prev => {
+            if (prev.some(c => c.id === payload.new.id)) return prev;
+            return [...prev, { id: payload.new.id, name: payload.new.name }];
+          });
         }
       })
       .subscribe();
