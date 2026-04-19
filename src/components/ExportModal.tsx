@@ -6,6 +6,7 @@ import { cn } from '../lib/utils.ts';
 import { Button } from './ui/button.tsx';
 import { Calendar } from './ui/calendar.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover.tsx';
+import { ChecklistItem } from '../types.ts';
 
 export type ExportItemKey = 'grocery' | 'schedule';
 
@@ -32,10 +33,12 @@ interface ExportModalProps {
   title: string;
   items: ExportItemDefinition[];
   mode?: 'combined';
+  checklistItems: ChecklistItem[];
+  onAddChecklistItem: (name: string) => Promise<ChecklistItem>;
+  onDeleteChecklistItem: (id: string) => Promise<void>;
 }
 
 const RANGE_STORAGE_KEY = 'exportModalDateRange';
-const REGULAR_CHECKLIST_ITEMS_STORAGE_KEY = 'regularChecklistItems';
 const REGULAR_CHECKLIST_SELECTED_STORAGE_KEY = 'regularChecklistSelectedItems';
 
 // Parse a YYYY-MM-DD string as a local midnight Date to avoid UTC timezone shifts
@@ -51,19 +54,21 @@ export default function ExportModal({
   initialStartDate, 
   initialEndDate,
   title,
-  items
+  items,
+  checklistItems,
+  onAddChecklistItem,
+  onDeleteChecklistItem
 }: ExportModalProps) {
   const [range, setRange] = useState<DateRange | undefined>({
     from: initialStartDate,
     to: initialEndDate
   });
   const [itemConfigs, setItemConfigs] = useState<ExportItemConfig[]>([]);
-  const [regularChecklistItems, setRegularChecklistItems] = useState<string[]>([]);
   const [selectedRegularChecklist, setSelectedRegularChecklist] = useState<Record<string, boolean>>({});
   const [newRegularChecklistItem, setNewRegularChecklistItem] = useState('');
 
-  const isRegularChecklistItemSelected = useCallback((item: string) => {
-    return selectedRegularChecklist[item] ?? true;
+  const isRegularChecklistItemSelected = useCallback((id: string) => {
+    return selectedRegularChecklist[id] ?? true;
   }, [selectedRegularChecklist]);
 
   const defaultConfigs = useMemo(() => {
@@ -101,20 +106,6 @@ export default function ExportModal({
         setRange({ from: initialStartDate, to: initialEndDate });
       }
       setItemConfigs(defaultConfigs);
-
-      const parsedRegularItems = (() => {
-        const raw = localStorage.getItem(REGULAR_CHECKLIST_ITEMS_STORAGE_KEY);
-        if (!raw) return [];
-        try {
-          const parsed = JSON.parse(raw);
-          if (!Array.isArray(parsed)) return [];
-          return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
-        } catch {
-          return [];
-        }
-      })();
-
-      setRegularChecklistItems(parsedRegularItems);
 
       const parsedSelectedRegularItems = (() => {
         const raw = localStorage.getItem(REGULAR_CHECKLIST_SELECTED_STORAGE_KEY);
@@ -190,48 +181,49 @@ export default function ExportModal({
       return;
     }
 
-    const selectedRegularChecklistItems = regularChecklistItems.filter(item => isRegularChecklistItemSelected(item));
+    const selectedRegularChecklistItems = checklistItems
+      .filter(item => isRegularChecklistItemSelected(item.id))
+      .map(item => item.name);
     onExport(range.from, range.to, itemConfigs, selectedRegularChecklistItems);
     onClose();
   };
 
-  const handleAddRegularChecklistItem = () => {
+  const handleAddRegularChecklistItem = async () => {
     const trimmed = newRegularChecklistItem.trim();
     if (!trimmed) return;
-    const alreadyExists = regularChecklistItems.some(item => item.toLowerCase() === trimmed.toLowerCase());
+    const alreadyExists = checklistItems.some(item => item.name.toLowerCase() === trimmed.toLowerCase());
     if (alreadyExists) {
       alert(`The checklist item "${trimmed}" already exists.`);
       return;
     }
-    const updated = [...regularChecklistItems, trimmed];
-    setRegularChecklistItems(updated);
-    localStorage.setItem(REGULAR_CHECKLIST_ITEMS_STORAGE_KEY, JSON.stringify(updated));
-    setSelectedRegularChecklist(prev => {
-      const next = { ...prev, [trimmed]: true };
-      localStorage.setItem(REGULAR_CHECKLIST_SELECTED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-    setNewRegularChecklistItem('');
+    try {
+      await onAddChecklistItem(trimmed);
+      setNewRegularChecklistItem('');
+    } catch (err) {
+      alert(`Failed to add checklist item: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
   };
 
-  const handleToggleRegularChecklistItem = (item: string, checked: boolean) => {
+  const handleToggleRegularChecklistItem = (id: string, checked: boolean) => {
     setSelectedRegularChecklist(prev => {
-      const next = { ...prev, [item]: checked };
+      const next = { ...prev, [id]: checked };
       localStorage.setItem(REGULAR_CHECKLIST_SELECTED_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
-  const handleRemoveRegularChecklistItem = (item: string) => {
-    const updated = regularChecklistItems.filter(current => current !== item);
-    setRegularChecklistItems(updated);
-    localStorage.setItem(REGULAR_CHECKLIST_ITEMS_STORAGE_KEY, JSON.stringify(updated));
-    setSelectedRegularChecklist(prev => {
-      const next = { ...prev };
-      delete next[item];
-      localStorage.setItem(REGULAR_CHECKLIST_SELECTED_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+  const handleRemoveRegularChecklistItem = async (id: string) => {
+    try {
+      await onDeleteChecklistItem(id);
+      setSelectedRegularChecklist(prev => {
+        const next = { ...prev };
+        delete next[id];
+        localStorage.setItem(REGULAR_CHECKLIST_SELECTED_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    } catch (err) {
+      alert(`Failed to remove checklist item: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
   };
 
   const dateLabel = range?.from
@@ -340,23 +332,23 @@ export default function ExportModal({
               </button>
             </div>
 
-            {regularChecklistItems.length === 0 ? (
+            {checklistItems.length === 0 ? (
               <p className="text-xs text-gray-500">No regular checklist items yet.</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {regularChecklistItems.map(item => (
-                  <div key={item} className="flex items-center gap-2">
+                {checklistItems.map(item => (
+                  <div key={item.id} className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={isRegularChecklistItemSelected(item)}
-                      onChange={(e) => handleToggleRegularChecklistItem(item, e.target.checked)}
+                      checked={isRegularChecklistItemSelected(item.id)}
+                      onChange={(e) => handleToggleRegularChecklistItem(item.id, e.target.checked)}
                       className="w-4 h-4 cursor-pointer"
                     />
-                    <span className="text-sm flex-1">{item}</span>
+                    <span className="text-sm flex-1">{item.name}</span>
                     <button
                       type="button"
                       className="btn btn-ghost p-1 text-xs"
-                      onClick={() => handleRemoveRegularChecklistItem(item)}
+                      onClick={() => handleRemoveRegularChecklistItem(item.id)}
                     >
                       Remove
                     </button>

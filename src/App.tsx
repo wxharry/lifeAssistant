@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import { Dish, MealType } from './types';
 import { SupabaseProvider, useSupabaseAuth } from './contexts/SupabaseContext';
-import { useDishes, useSchedule } from './hooks/useSupabaseData';
+import { useDishes, useSchedule, useChecklistItems } from './hooks/useSupabaseData';
 import { BackupData } from './utils/exportBackup';
 import { useState } from 'react';
 import { MEAL_COLORS, MEAL_DARK_COLORS } from './components/SchedulerXCalendar';
@@ -55,6 +55,7 @@ function AppContent() {
   const { user, loading } = useSupabaseAuth();
   const { dishes, addDish, updateDish, deleteDish } = useDishes(user?.id);
   const { schedule, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem } = useSchedule(user?.id);
+  const { checklistItems, addChecklistItem, deleteChecklistItem } = useChecklistItems(user?.id);
 
   type ActiveDrag =
     | { type: 'dish'; dish: Dish }
@@ -402,6 +403,9 @@ function AppContent() {
                 onUpdateServings={handleUpdateServings}
                 onChangeMealType={handleChangeMealType}
                 onRestoreBackup={handleRestoreBackup}
+                checklistItems={checklistItems}
+                onAddChecklistItem={addChecklistItem}
+                onDeleteChecklistItem={deleteChecklistItem}
               />
             } />
             <Route path="menu" element={
