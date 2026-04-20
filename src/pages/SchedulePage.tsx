@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search } from 'lucide-react';
-import { ScheduleItem, Dish, MealType } from '../types';
+import { ScheduleItem, Dish, MealType, ChecklistItem } from '../types';
 import SchedulerXCalendar from '../components/SchedulerXCalendar';
 import FixedHeader from '../components/FixedHeader';
 import { DraggableDish } from '../components/DraggableDish';
@@ -17,9 +17,12 @@ interface SchedulePageProps {
   onUpdateServings: (day: string, mealType: MealType, dishId: string, delta: number) => Promise<void> | void;
   onChangeMealType: (day: string, fromMealType: MealType, toMealType: MealType, dishId: string, newServings?: number) => Promise<void> | void;
   onRestoreBackup: (backup: BackupData) => Promise<void>;
+  checklistItems: ChecklistItem[];
+  onAddChecklistItem: (name: string) => Promise<ChecklistItem>;
+  onDeleteChecklistItem: (id: string) => Promise<void>;
 }
 
-export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup }: SchedulePageProps) {
+export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, onUpdateServings, onChangeMealType, onRestoreBackup, checklistItems, onAddChecklistItem, onDeleteChecklistItem }: SchedulePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -37,11 +40,11 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
     setIsExportOpen(true);
   };
 
-  const handleExportConfirm = (start: Date, end: Date, items: ExportItemConfig[]) => {
+  const handleExportConfirm = (start: Date, end: Date, items: ExportItemConfig[], selectedRegularChecklistItems: string[]) => {
     items.forEach(item => {
       if (!item.checked) return;
       if (item.key === 'grocery') {
-        exportGroceryList(schedule, dishes, start, end, item.format, item.listName || undefined);
+        exportGroceryList(schedule, dishes, start, end, item.format, item.listName || undefined, selectedRegularChecklistItems);
       }
       if (item.key === 'schedule') {
         exportScheduledDishes(schedule, dishes, start, end, item.format, item.listName || undefined);
@@ -157,6 +160,9 @@ export default function SchedulePage({ schedule, dishes, onRemoveFromSchedule, o
           { key: 'grocery', label: 'Grocery List', storageKey: 'groceryListName', defaultChecked: true, defaultFormat: 'json' },
           { key: 'schedule', label: 'Scheduled Dishes', storageKey: 'scheduledDishesListName', defaultChecked: true, defaultFormat: 'json' }
         ]}
+        checklistItems={checklistItems}
+        onAddChecklistItem={onAddChecklistItem}
+        onDeleteChecklistItem={onDeleteChecklistItem}
       />
     </div>
   );

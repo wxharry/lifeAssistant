@@ -24,3 +24,8 @@ export interface ScheduleItem {
 }
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'others'];
+
+export interface ChecklistItem {
+  id: string;
+  name: string;
+}

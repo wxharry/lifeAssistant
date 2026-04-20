@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Dish, ScheduleItem } from '../types';
+import { Dish, ScheduleItem, ChecklistItem } from '../types';
 
 export function useDishes(userId: string | undefined) {
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -223,4 +223,88 @@ export function useSchedule(userId: string | undefined) {
   };
 
   return { schedule, loading, error, addScheduleItem, updateScheduleItem, deleteScheduleItem, upsertScheduleItem };
+}
+
+export function useChecklistItems(userId: string | undefined) {
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      setChecklistItems([]);
+      setLoading(false);
+      return;
+    }
+
+    const fetchChecklistItems = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('checklist_items')
+          .select('id, name')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setChecklistItems(data || []);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch checklist items');
+        setChecklistItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChecklistItems();
+
+    // Subscribe to real-time changes
+    const subscription = supabase
+      .channel(`checklist_items_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_items', filter: `user_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setChecklistItems(prev => prev.filter(c => c.id !== payload.old.id));
+        } else if (payload.eventType === 'INSERT') {
+          setChecklistItems(prev => {
+            if (prev.some(c => c.id === payload.new.id)) return prev;
+            return [...prev, { id: payload.new.id, name: payload.new.name }];
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [userId]);
+
+  const addChecklistItem = async (name: string) => {
+    if (!userId) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('checklist_items')
+      .insert([{ name, user_id: userId }])
+      .select('id, name')
+      .single();
+
+    if (error) throw error;
+    setChecklistItems(prev => [...prev, data]);
+    return data as ChecklistItem;
+  };
+
+  const deleteChecklistItem = async (id: string) => {
+    if (!userId) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('checklist_items')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    setChecklistItems(prev => prev.filter(c => c.id !== id));
+  };
+
+  return { checklistItems, loading, error, addChecklistItem, deleteChecklistItem };
 }
