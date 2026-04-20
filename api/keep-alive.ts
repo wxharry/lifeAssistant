@@ -35,7 +35,7 @@ export default async function handler(req: KeepAliveRequest, res: KeepAliveRespo
   }
 
   if (!supabaseUrl || !supabaseKey) {
-    res.status(500).send('Missing Supabase environment variables');
+    res.status(500).send('Missing required environment variables: SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY');
     return;
   }
 
