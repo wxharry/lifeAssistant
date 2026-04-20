@@ -50,7 +50,7 @@ Open `.env.local` and set the following values (found in your Supabase project u
 
 ```env
 PUBLIC_VITE_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_VITE_SUPABASE_ANON_KEY=your-anon-key-here
+PUBLIC_VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
 ```
 
 ### 3. Set up the database
@@ -84,9 +84,16 @@ The repository includes a `vercel.json` configuration file for one-click deploym
 1. Push the repository to GitHub (or fork it).
 2. Import the project in the [Vercel dashboard](https://vercel.com/new).
 3. Add the following environment variables in the Vercel project settings:
-   - `PUBLIC_VITE_SUPABASE_URL`
-   - `PUBLIC_VITE_SUPABASE_ANON_KEY`
-4. Deploy — Vercel will automatically run `vite build` and serve the output from the `dist/` directory.
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `KEEP_ALIVE_TABLE` (optional; defaults to `allowed_users`)
+   - `CRON_SECRET` (recommended; used to secure the keep-alive cron endpoint)
+4. Get the Supabase values from **Supabase Dashboard → Project Settings → API**:
+   - `SUPABASE_URL`: your project URL
+   - `SUPABASE_PUBLISHABLE_KEY`: your project publishable key
+5. Set these in **Vercel Dashboard → Project → Settings → Environment Variables**.
+6. Deploy — Vercel will automatically run `vite build` and serve the output from the `dist/` directory.
+7. A daily Vercel cron job (`/api/keep-alive`) is configured to ping Supabase and keep the free-tier database active (it runs a lightweight read against `public.allowed_users`).
 
 ### Manual / Self-hosted Deployment
 
