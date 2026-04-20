@@ -86,9 +86,12 @@ The repository includes a `vercel.json` configuration file for one-click deploym
 3. Add the following environment variables in the Vercel project settings:
    - `PUBLIC_VITE_SUPABASE_URL`
    - `PUBLIC_VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_URL` (optional server-side alias for cron/API usage)
+   - `SUPABASE_ANON_KEY` (optional server-side alias for cron/API usage)
+   - `KEEP_ALIVE_TABLE` (optional; defaults to `allowed_users`)
    - `CRON_SECRET` (recommended; used to secure the keep-alive cron endpoint)
 4. Deploy — Vercel will automatically run `vite build` and serve the output from the `dist/` directory.
-5. A daily Vercel cron job (`/api/keep-alive`) is configured to ping Supabase and keep the free-tier database active.
+5. A daily Vercel cron job (`/api/keep-alive`) is configured to ping Supabase and keep the free-tier database active (it runs a lightweight read against `public.allowed_users`).
 
 ### Manual / Self-hosted Deployment
 
