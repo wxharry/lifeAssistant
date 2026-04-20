@@ -50,7 +50,7 @@ Open `.env.local` and set the following values (found in your Supabase project u
 
 ```env
 PUBLIC_VITE_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_VITE_SUPABASE_ANON_KEY=your-anon-key-here
+PUBLIC_VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
 ```
 
 ### 3. Set up the database
@@ -85,9 +85,10 @@ The repository includes a `vercel.json` configuration file for one-click deploym
 2. Import the project in the [Vercel dashboard](https://vercel.com/new).
 3. Add the following environment variables in the Vercel project settings:
    - `PUBLIC_VITE_SUPABASE_URL`
-   - `PUBLIC_VITE_SUPABASE_ANON_KEY`
+   - `PUBLIC_VITE_SUPABASE_PUBLISHABLE_KEY` (or legacy `PUBLIC_VITE_SUPABASE_ANON_KEY`)
    - `SUPABASE_URL` (optional server-side alias for cron/API usage)
-   - `SUPABASE_ANON_KEY` (optional server-side alias for cron/API usage)
+   - `SUPABASE_PUBLISHABLE_KEY` (recommended server-side key for cron/API usage)
+   - `SUPABASE_SECRET_KEY` (optional alternative for server-side cron/API usage)
    - `KEEP_ALIVE_TABLE` (optional; defaults to `allowed_users`)
    - `CRON_SECRET` (recommended; used to secure the keep-alive cron endpoint)
 4. Deploy — Vercel will automatically run `vite build` and serve the output from the `dist/` directory.
