@@ -1,21 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const pickFirst = (...values: Array<string | undefined>) =>
-  values.find((value) => value && value.trim().length > 0);
-
-const supabaseUrl = pickFirst(
-  process.env.SUPABASE_URL,
-  process.env.VITE_SUPABASE_URL,
-  process.env.PUBLIC_VITE_SUPABASE_URL
-);
-const supabaseKey = pickFirst(
-  process.env.SUPABASE_PUBLISHABLE_KEY,
-  process.env.SUPABASE_ANON_KEY,
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-  process.env.PUBLIC_VITE_SUPABASE_PUBLISHABLE_KEY,
-  process.env.VITE_SUPABASE_ANON_KEY,
-  process.env.PUBLIC_VITE_SUPABASE_ANON_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 const cronSecret = process.env.CRON_SECRET;
 const keepAliveTable = process.env.KEEP_ALIVE_TABLE ?? 'allowed_users';
 
