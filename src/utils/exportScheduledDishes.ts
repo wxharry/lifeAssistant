@@ -1,5 +1,5 @@
 import { saveAs } from 'file-saver';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { ScheduleItem, Dish, MealType } from '../types';
 
 interface ScheduledItem {
@@ -19,6 +19,23 @@ const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '�
 
 function getDayOfWeekChinese(date: Date): string {
   return dayNames[date.getDay()];
+}
+
+function getPreparingReminderDate(slotDate: string, mealType: MealType, daysBefore: number): string | undefined {
+  if (daysBefore < 1) return undefined;
+
+  const prepDate = subDays(new Date(slotDate), daysBefore);
+  if (mealType === 'lunch') {
+    prepDate.setHours(8, 0, 0, 0);
+    return prepDate.toISOString();
+  }
+
+  if (mealType === 'dinner') {
+    prepDate.setHours(17, 0, 0, 0);
+    return prepDate.toISOString();
+  }
+
+  return undefined;
 }
 
 export function exportScheduledDishes(
@@ -75,6 +92,20 @@ export function exportScheduledDishes(
           notes: notes,
           ...(dueDate && { dueDate })
         });
+
+        const preparingReminderEnabled = item.prepReminderEnabled ?? dish.prepReminderEnabled ?? false;
+        const preparingReminderDaysBefore = item.prepReminderDaysBefore ?? 1;
+        const preparingReminderDate = preparingReminderEnabled
+          ? getPreparingReminderDate(slot.date, slot.mealType, preparingReminderDaysBefore)
+          : undefined;
+
+        if (preparingReminderDate) {
+          items.push({
+            title: `Preparing Reminder: ${dish.name}`,
+            notes: `${notes} (${preparingReminderDaysBefore} day(s) before)`,
+            dueDate: preparingReminderDate
+          });
+        }
       }
     });
   });
