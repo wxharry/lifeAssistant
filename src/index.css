@@ -34,7 +34,7 @@
   }
 
   .schedule-layout {
-    @apply flex h-screen overflow-hidden;
+    @apply flex h-full overflow-hidden;
   }
   
   .sidebar {
