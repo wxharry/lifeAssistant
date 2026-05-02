@@ -19,7 +19,8 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
     seasonings: [],
     videoLink: '',
     ingredients: [],
-    servings: dish?.servings || 1
+    servings: dish?.servings || 1,
+    prepReminderEnabled: dish?.prepReminderEnabled ?? false
   });
   const [ingredientInput, setIngredientInput] = useState<Omit<Ingredient, 'id'>>({ name: '', amount: '', unit: '' });
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
@@ -34,10 +35,11 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
           seasonings: dish.seasonings || [],
           videoLink: dish.videoLink || '',
           ingredients: dish.ingredients,
-          servings: dish.servings || 1
+          servings: dish.servings || 1,
+          prepReminderEnabled: dish.prepReminderEnabled ?? false
         });
       } else {
-        setFormData({ name: '', seasonings: [], videoLink: '', ingredients: [], servings: 1 });
+        setFormData({ name: '', seasonings: [], videoLink: '', ingredients: [], servings: 1, prepReminderEnabled: false });
       }
       setIngredientInput({ name: '', amount: '', unit: '' });
       setEditingIngredientId(null);
@@ -158,6 +160,10 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
                   Watch Tutorial
                 </a>
               )}
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold">Preparing Reminder</span>
+                <span className="text-sm text-gray-500">{dish?.prepReminderEnabled ? 'Enabled by default' : 'Disabled by default'}</span>
+              </div>
               
               <div>
                 <h3 className="text-sm font-semibold mb-2">Ingredients</h3>
@@ -210,6 +216,18 @@ export default function DishModal({ isOpen, onClose, mode: initialMode, dish, on
                   onChange={e => setFormData({...formData, servings: parseInt(e.target.value) || 1})}
                   placeholder="1"
                 />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="prep-reminder-enabled"
+                  type="checkbox"
+                  checked={formData.prepReminderEnabled ?? false}
+                  onChange={e => setFormData({ ...formData, prepReminderEnabled: e.target.checked })}
+                />
+                <label htmlFor="prep-reminder-enabled" className="text-xs font-medium text-gray-500">
+                  Enable Preparing Reminder by default
+                </label>
               </div>
 
               <div className="flex flex-col gap-1">
