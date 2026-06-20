@@ -56,7 +56,8 @@ export function exportScheduledDishes(
         const slotDate = new Date(slot.date);
         const dayOfWeek = getDayOfWeekChinese(slotDate);
         const mealType = mealTypeMap[slot.mealType] || slot.mealType;
-        const notes = `${dayOfWeek}${mealType}`;
+        const videoLink = dish.videoLink?.trim();
+        const notes = `${dayOfWeek}${mealType}${videoLink ? ` | 视频: ${videoLink}` : ''}`;
         
         // Add dueDate for lunch and dinner
         let dueDate: string | undefined;
