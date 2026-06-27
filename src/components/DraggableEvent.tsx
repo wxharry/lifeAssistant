@@ -11,6 +11,8 @@ export function DraggableEvent({ event, onDoubleClick }: { event: ScheduleEvent;
       isRescheduling: true,
       sourceDay: event.day,
       sourceMealType: event.mealType,
+      sourcePrepReminderEnabled: event.prepReminderEnabled,
+      sourcePrepReminderDaysBefore: event.prepReminderDaysBefore,
       sourceIndex: event.dishIndex,
       dishId: event.dishId
     }
@@ -36,6 +38,11 @@ export function DraggableEvent({ event, onDoubleClick }: { event: ScheduleEvent;
     >
       <div className="font-semibold pointer-events-none">{event.dish.name}</div>
       <div className="text-gray-600 pointer-events-none">{event.mealType} • {event.servings}x</div>
+      {event.prepReminderEnabled && (
+        <div className="text-gray-600 pointer-events-none">
+          Preparing reminder • {event.prepReminderDaysBefore ?? 1} day(s) before
+        </div>
+      )}
     </div>
   );
 }
